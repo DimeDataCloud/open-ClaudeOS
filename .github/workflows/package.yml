@@ -12,6 +12,10 @@ on:
   push:
   workflow_dispatch:
 
+# contents: write lets the build attach its packages to the rolling "ci-latest" pre-release.
+permissions:
+  contents: write
+
 # A newer push waits for a running package build instead of cancelling it: this job is the slow one
 # and its result (the app running on a Windows desktop) is the thing worth seeing.
 concurrency:
@@ -68,7 +72,7 @@ jobs:
             "/p:AppxPackageDir=$out\" `
             /p:AppxPackageSigningEnabled=true "/p:PackageCertificateKeyFile=$env:PFX_PATH" "/p:PackageCertificatePassword=$env:SIGN_PASSWORD"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item $env:CER_PATH $out
+          Copy-Item $env:CER_PATH (Join-Path $out "claudeos-test-${{ matrix.platform }}.cer")
           Get-ChildItem $out -Recurse -Include *.msix, *.cer | ForEach-Object { Write-Host $_.FullName }
 
       - name: What went wrong
@@ -94,6 +98,24 @@ jobs:
         shell: pwsh
         run: |
           "### open-ClaudeOS ${{ matrix.platform }} package`n`nSigned with: ${{ steps.cert.outputs.mode }}`n`nInstall: trust the .cer once (Local Machine > Trusted People), then open the .msix. See docs/testing.md." >> $env:GITHUB_STEP_SUMMARY
+
+      # GitHub's artifact store is a per-account quota and can be full (this repo's was). Release assets
+      # are not part of it, so the installable packages are also attached to one rolling pre-release.
+      - name: Attach the package to the rolling pre-release
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "ci-latest"
+          $assets = @(Get-ChildItem out -Recurse -Include *.msix, claudeos-test-*.cer | ForEach-Object { $_.FullName })
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Latest CI build" --notes "Rolling pre-release: the newest test-signed packages from CI. Trust the matching .cer once (Local Machine > Trusted People), then open the .msix. Not for production." *> $null
+          }
+          gh release upload $tag @assets --clobber
+          gh release edit $tag --notes "Built from $env:GITHUB_SHA. Trust the .cer that matches your package once (Local Machine > Trusted People), then open the .msix. A throwaway certificate is made for each build unless the repository has the signing secrets, so a new build may need its .cer trusted again. Test build, not for production."
+          $global:LASTEXITCODE = 0
 
       - name: Install the package (x64 only)
         if: matrix.platform == 'x64'
@@ -146,6 +168,22 @@ jobs:
               ForEach-Object { Get-Content $_.FullName -Tail 5 }
             exit 1
           }
+
+      - name: Pictures of the running shell (x64 only)
+        if: always() && matrix.platform == 'x64' && steps.install.outcome == 'success'
+        shell: pwsh
+        env:
+          PFN: ${{ steps.install.outputs.pfn }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $shots = Join-Path $env:LOCALAPPDATA "Packages\$env:PFN\LocalState\shots"
+          if (Test-Path $shots) {
+            $zip = Join-Path $env:RUNNER_TEMP "selftest-shots.zip"
+            Compress-Archive -Path "$shots\*" -DestinationPath $zip -Force
+            if ('${{ github.event_name }}' -eq 'push') { gh release upload ci-latest $zip --clobber }
+            Get-ChildItem $shots | ForEach-Object { Write-Host "$($_.Name) $($_.Length) bytes" }
+          } else { Write-Host "no pictures were taken" }
+          $global:LASTEXITCODE = 0
 
   aot-probe:
     name: Native AOT probe
