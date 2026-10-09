@@ -198,12 +198,12 @@ jobs:
 
   aot-probe:
     name: Native AOT probe
-    # Only on demand: the answer is known (see docs/stack-decision.md) and the job costs minutes.
-    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
-    # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist. Expect it to fail
-    # while the official Anthropic SDK needs reflection-based JSON (see docs/stack-decision.md); the
-    # result and the first errors are written to the run summary.
+    # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist. It builds (the
+    # shell publishes for win-x64), but the shell would fail at the first Claude request because the
+    # official Anthropic SDK needs reflection-based JSON (see docs/stack-decision.md), so the shell
+    # ships on the regular runtime. The job runs with every package build so that a change in the SDK
+    # or in our code shows up here; its result and the first errors are written to the run summary.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4

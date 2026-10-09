@@ -125,7 +125,7 @@ adapter) ahead of time on Linux and running it:
   the SDK's converters for its immutable collections are trimmed away.
 
 (A Native AOT *publish* of the shell itself does compile in CI. Re-run on 2026-10-09 from
-the *Package (Windows)* workflow's on-demand probe, at `4647a75` for `win-x64`: it published in
+the *Package (Windows)* workflow's Native AOT probe, at `4647a75` for `win-x64`: it published in
 about three minutes with no errors. The warnings were the SDK's own (`IL2104` and `IL3053`
 on `Anthropic.dll`, the same ones that predict the runtime failure above), `CsWinRT1028`
 (`PresenceOrb` is not marked `partial`), and two ordinary compiler warnings, `CS0252` in
