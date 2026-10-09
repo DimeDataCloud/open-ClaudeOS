@@ -12,9 +12,11 @@ on:
   push:
   workflow_dispatch:
 
+# A newer push waits for a running package build instead of cancelling it: this job is the slow one
+# and its result (the app running on a Windows desktop) is the thing worth seeing.
 concurrency:
   group: package-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   msix:
