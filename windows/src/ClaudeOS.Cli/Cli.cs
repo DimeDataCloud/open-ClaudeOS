@@ -5,6 +5,7 @@ using ClaudeOS.Core.Design;
 using ClaudeOS.Core.Intent;
 using ClaudeOS.Core.Mods;
 using ClaudeOS.Core.Safety;
+using ClaudeOS.Core.Terminal;
 
 namespace ClaudeOS.Cli;
 
@@ -24,6 +25,7 @@ public static class Cli
           claudeos route "<text>"                                               how a request would be routed
           claudeos theme [--accent #HEX] [--appearance light|dark]              resolve and check a theme
           claudeos mod <mod.json> [--set path=value] [--setting key=value]      review a mod: the card, its formulas, a preview
+          claudeos shell [--root DIR]... [--ascii]                              the Intent Bar in a terminal: open, find, ask, undo
 
         Options for do / apply:
           --root DIR            the workspace the plan may touch (default: .)
@@ -54,6 +56,7 @@ public static class Cli
                 "route" => await RouteAsync(opts),
                 "theme" => Theme(opts),
                 "mod" => ReviewMod(opts),
+                "shell" => await ShellAsync(opts, state),
                 "demo-data" => DemoData.Run(opts),
                 _ => Fail($"unknown command '{opts.Command}'. Try: claudeos help"),
             };
@@ -209,6 +212,52 @@ public static class Cli
         Console.WriteLine($"{routing.Intent.GetType().Name} via {routing.Source} in {routing.Elapsed.TotalMilliseconds:0.00} ms");
         Console.WriteLine(routing.Intent);
         return 0;
+    }
+
+    /// <summary>The Intent Bar for a terminal. Everything that changes files still goes through the same approval card.</summary>
+    private static async Task<int> ShellAsync(Options opts, StateDir state)
+    {
+        var roots = opts.All("root").Select(Path.GetFullPath).ToList();
+        if (roots.Count == 0)
+        {
+            roots.Add(Path.GetFullPath("."));
+        }
+
+        var carried = new List<string>();
+        foreach (var flag in new[] { "yes", "model", "effort", "trust-domain", "trust-host", "state-dir", "daily-budget", "monthly-budget", "theme" })
+        {
+            foreach (var value in opts.All(flag))
+            {
+                carried.Add("--" + flag);
+                if (value != "true")
+                {
+                    carried.Add(value);
+                }
+            }
+        }
+
+        var bar = new TerminalBar(Console.In, Console.Out, roots, new IntentRouter(new LocalIntentClassifier()))
+        {
+            Ascii = opts.Flag("ascii") || Console.OutputEncoding.CodePage is not 65001 and not 1200,
+            Open = OpenWithDefault,
+            Undo = () => Undo(Options.Parse(["undo", .. carried]), state) == 0
+                ? AssistOutcome.Done("Undid the last change")
+                : AssistOutcome.Note("Nothing to undo"),
+            Assist = async (intent, text, ct) =>
+            {
+                var code = await Do.RunAsync(Options.Parse(["do", text, "--root", roots[0], .. carried]), state, intent);
+                return code == 0 ? AssistOutcome.Done("Done") : AssistOutcome.Failed("That did not finish");
+            },
+        };
+        return await bar.RunAsync();
+    }
+
+    private static void OpenWithDefault(string path)
+    {
+        var start = OperatingSystem.IsWindows()
+            ? new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true }
+            : new System.Diagnostics.ProcessStartInfo(OperatingSystem.IsMacOS() ? "open" : "xdg-open") { ArgumentList = { path } };
+        System.Diagnostics.Process.Start(start);
     }
 
     /// <summary>What a person would see before installing a mod, with sample readings you can change.</summary>

@@ -86,6 +86,9 @@ jobs:
           cp -r examples/invoices-demo "$RUNNER_TEMP/demo"
           "$RUNNER_TEMP/aot/claudeos" route "can you please open the q3 budget" | tee route.txt
           grep -q OpenIntent route.txt
+          printf 'open the q3 budget\nsnap left\nexit\n' | "$RUNNER_TEMP/aot/claudeos" shell --root examples/charts --ascii | tee shell.txt
+          grep -q "v Found it" shell.txt
+          grep -q "no windows to move" shell.txt
           "$RUNNER_TEMP/aot/claudeos" route "i need a little widget for my battery level" | tee npu.txt
           grep -q "via Npu" npu.txt
           "$RUNNER_TEMP/aot/claudeos" chart examples/charts/spend-by-month.chart.json --data examples/charts/q3-budget.csv --out "$RUNNER_TEMP/chart.svg" | tee chart.txt

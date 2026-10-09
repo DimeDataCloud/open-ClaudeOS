@@ -90,6 +90,9 @@ dotnet run --project src/ClaudeOS.Cli -- undo
 dotnet run --project src/ClaudeOS.Cli -- chart ../examples/charts/spend-by-month.chart.json \
   --data ../examples/charts/q3-budget.csv --out spend.svg
 
+# The Intent Bar in a terminal (Linux, macOS or Windows): open, find, ask, undo
+dotnet run --project src/ClaudeOS.Cli -- shell --root ~/Documents
+
 # Review a mod the way you would before installing it: the card, its formulas, a preview
 dotnet run --project src/ClaudeOS.Cli -- mod ../examples/mods/battery-nudge/mod.json --set system.battery.percent=9
 
@@ -136,7 +139,7 @@ windows/src/ClaudeOS.Core    actions, policy, consent, undo, routing, layout, ch
 windows/src/ClaudeOS.Claude  the one place that talks to the Anthropic SDK
 windows/src/ClaudeOS.Cli     the same core on a terminal
 windows/src/ClaudeOS.Shell   the WinUI 3 app
-windows/tests                412 tests
+windows/tests                426 tests
 design/                      tokens (one source → CSS, XAML, C#), prototype, screenshots
 src/claudeos, tests/         the Python reference (Phase 0)
 ```
@@ -147,7 +150,7 @@ This is a pre-release. What has been verified, and by what:
 
 | | State |
 |---|---|
-| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 412 tests (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
+| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 426 tests (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
 | Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
 | Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
 | Windows shell | **Compiles for x64 and ARM64 in CI, packages as a signed MSIX, and in CI is installed on a Windows desktop and tests itself** (bar, chart, widget, approval card with a planted email, hold-to-approve). It has **not yet been run on a Surface**; expect polish bugs in how it looks and feels. That is milestone M0 |
@@ -155,6 +158,7 @@ This is a pre-release. What has been verified, and by what:
 | Agent Launcher | Designed; M0 measures it. The device check says plainly what is not wired up yet |
 | Native AOT | **Core and CLI: verified** (CI publishes and runs the native binary). **Shell: no**: the official Anthropic SDK needs reflection-based JSON, so the shell runs on the regular .NET runtime. [Details](docs/stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk) |
 | Scripted mods | **Built and tested on Linux**: formulas (no loops, no calls out) with a step budget, shown in full on the approval card; the native binary runs them. The shell draws them like any widget but that path has not run on Windows yet |
+| Terminal Intent Bar (`claudeos shell`) | **Built and tested; the native Linux binary runs it.** The same router, presence and file search as the desktop bar, with the Spark as one glyph; it is how to try the product on Linux or macOS today. There is no graphical Linux or macOS shell yet |
 | Web mods | Designed, deliberately refused until the WebView2 sandbox exists |
 
 Open decisions for the owner are in [HANDOFF.md](HANDOFF.md): the license is

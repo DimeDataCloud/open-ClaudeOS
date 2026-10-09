@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 412 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 426 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
@@ -92,6 +92,12 @@ What they pin down:
   ("sing me a song") and file chores ("order a pizza", "rename my photos") are never confidently taken
   for a command. Words it has never seen get zero confidence; the test files fail if any held-out
   phrase leaks into the training data; classification takes well under a millisecond.
+- **The terminal Intent Bar** (`Terminal/TerminalBarTests`): scripted sessions through injected
+  input and output. Opening and finding are answered on the device and say "no model"; a number
+  opens exactly the result it names; things that need Claude go to the host, which owns the approval;
+  a host that throws becomes a message and the bar carries on; explanations are quiet notes, not
+  failures; the Spark has an ASCII form; 400 random lines never crash it. CI pipes a session through
+  the Native AOT binary.
 - **Presence** (`Presence/`): the state machine, driven event by event, including
   offline and reduced-motion behaviour.
 - **Prompt injection.** `Prompt_injection_in_a_file_is_data_the_policy_still_contains`
