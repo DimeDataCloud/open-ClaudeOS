@@ -20,3 +20,6 @@ artifacts/
 # design tooling
 design/node_modules
 design/dist/*.png
+
+# design/dist holds the generated tokens.css (tracked); only its screenshots are ignored
+!design/dist/
