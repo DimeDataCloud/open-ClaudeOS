@@ -19,7 +19,7 @@ namespace ClaudeOS.Cli;
 /// </summary>
 internal static class Do
 {
-    public static async Task<int> RunAsync(Options opts, StateDir state)
+    public static async Task<int> RunAsync(Options opts, StateDir state, UserIntent? routed = null)
     {
         var text = string.Join(' ', opts.Positional).Trim();
         if (text.Length == 0)
@@ -28,8 +28,13 @@ internal static class Do
         }
 
         var root = opts.Get("root") ?? ".";
-        var routing = await new IntentRouter(new LocalIntentClassifier()).RouteAsync(text);
-        Console.Error.WriteLine($"  routed locally in {routing.Elapsed.TotalMilliseconds:0.0} ms: {routing.Intent.GetType().Name}");
+        var routing = routed is null
+            ? await new IntentRouter(new LocalIntentClassifier()).RouteAsync(text)
+            : new Routing(routed, RouteSource.Grammar, TimeSpan.Zero);
+        if (routed is null)
+        {
+            Console.Error.WriteLine($"  routed locally in {routing.Elapsed.TotalMilliseconds:0.0} ms: {routing.Intent.GetType().Name}");
+        }
 
         switch (routing.Intent)
         {
