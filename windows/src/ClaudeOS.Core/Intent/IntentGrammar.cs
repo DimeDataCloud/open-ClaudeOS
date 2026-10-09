@@ -21,6 +21,16 @@ public static partial class IntentGrammar
             return new(new UnclearIntent(raw), false);
         }
 
+        if (AcceptRx().IsMatch(s))
+        {
+            return new(new SuggestionReplyIntent(raw, true), true);
+        }
+
+        if (DeclineRx().IsMatch(s))
+        {
+            return new(new SuggestionReplyIntent(raw, false), true);
+        }
+
         if (UndoRx().IsMatch(s))
         {
             return new(new UndoIntent(raw), true);
@@ -124,6 +134,12 @@ public static partial class IntentGrammar
 
     [GeneratedRegex(@"^(?:the|my|a|an|that|this)\s+")]
     private static partial Regex ArticleRx();
+
+    [GeneratedRegex(@"^(?:yes|yeah|yep|yup|sure|ok|okay|do it|do that|go ahead|sounds good|that works|please do|make (?:it|that) (?:automatic|a rule)|always|yes,? (?:do (?:it|that)|always|make it automatic))$")]
+    private static partial Regex AcceptRx();
+
+    [GeneratedRegex(@"^(?:no|nope|nah|not now|no thanks|no,? thanks|never mind|nevermind|don'?t|not really|skip(?: it| that)?|dismiss)$")]
+    private static partial Regex DeclineRx();
 
     [GeneratedRegex(@"^(?:undo|undo that|undo it|undo the last(?: change| thing)?|revert(?: that| the last change)?|take that back)$")]
     private static partial Regex UndoRx();

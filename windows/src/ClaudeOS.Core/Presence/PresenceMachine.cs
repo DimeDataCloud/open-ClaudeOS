@@ -178,7 +178,7 @@ public sealed class PresenceMachine(TimeProvider? clock = null, bool reducedMoti
 
     private PresenceFrame OnSuggest(string message)
     {
-        _suggestion = message;
+        _suggestion = string.IsNullOrEmpty(message) ? null : message;
         return Frame.State is PresenceState.Idle or PresenceState.Dormant && _barOpen ? Idle() : Frame with { Suggestion = message };
     }
 
