@@ -124,10 +124,10 @@ adapter) ahead of time on Linux and running it:
   which Native AOT disables. Turning reflection back on does not fix it either:
   the SDK's converters for its immutable collections are trimmed away.
 
-So the shell ships as a self-contained, ReadyToRun-compiled MSIX (fast start,
-no JIT warm-up for our code) with the Intent Bar created at login and only
-shown and hidden afterwards, which is what keeps hotkey-to-visible short. If
-M0 shows start-up time matters more than the SDK, the escape hatch already
-exists: `IModelClient` is the only seam, so `ClaudeOS.Claude` can be replaced by
+So the shell ships as a self-contained MSIX on the regular .NET runtime. The
+Intent Bar is created once at start-up and only shown and hidden afterwards,
+which is what keeps hotkey-to-visible short; ReadyToRun compilation is the next
+lever for cold-start time if M0 shows it is needed. If M0 shows start-up time
+matters more than the SDK, the escape hatch already exists: `IModelClient` is the only seam, so `ClaudeOS.Claude` can be replaced by
 a small source-generated HTTP client for the Messages API, and the whole app
 can then go ahead-of-time. Until then the project uses the supported SDK.
