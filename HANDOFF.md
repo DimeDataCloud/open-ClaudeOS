@@ -24,6 +24,28 @@ concept.
 | Docs | `docs/`, `README.md` | [design](docs/design.md), [testing](docs/testing.md), architecture, challenges, threat model, stack decision (with an "as built" section), Windows plan (with milestone status), roadmap |
 | CI | `.github/workflows/` | `ci.yml` (Python, .NET on Linux and Windows, design sync, Native AOT guard), `shell.yml` (compile x64 and ARM64), `package.yml` (signed MSIX, a run-it self-test on a Windows desktop, an AOT probe of the shell) |
 
+## Where it stands (end of the first session, 2026-10-09)
+
+- **Branch and pull request.** Work is on `ccr-6c2d7909-nzeecq` (draft PR #1 into `main`),
+  pushed and clean. The repository is public.
+- **CI is green.** Every job passes at `4647a75`, including the signed MSIX for x64 and ARM64
+  and the install-and-self-test on a Windows desktop (which also takes the screenshots in
+  `docs/images`). The rolling **Latest CI build** release carries the packages from that run.
+- **Native AOT of the shell, measured again.** The on-demand probe (run by hand from the Actions
+  tab, *Package (Windows)* → *Run workflow*) published the shell for `win-x64` without errors.
+  The warnings are the Anthropic SDK's own trim and AOT warnings, plus three small ones in our
+  code that are worth tidying (`PresenceOrb` should be `partial`; `IntentBarWindow.xaml.cs:112`
+  compares references with `==`; `SelfTest.cs:163` dereferences a possible null). It compiles; it was not run,
+  and it would fail at the first Claude request, so the shell still ships on the regular runtime.
+- **Tested:** 434 xUnit tests (Linux and Windows), 23 Python tests, about 91% line coverage of the
+  hand-written core, injection and fuzz suites on the safety code, differential tests against Python.
+- **Not tested, and cannot be from CI:** the app on a Surface, any real Claude call (no key was
+  ever available), a restart with a saved `habits.json` on Windows, and hands-on use.
+- **Not built:** web mods, a learned NPU model, a graphical Linux shell, dedicated windows for
+  table, report and diagram artifacts.
+- **Open questions for you:** the name, private vulnerability reporting, and the PR/default
+  branch arrangement (all under "For you" below).
+
 ## Decisions made in this session
 
 You asked for no questions, so these defaults were taken; each is easy to change.
@@ -49,7 +71,7 @@ You asked for no questions, so these defaults were taken; each is easy to change
 ## For you (the owner)
 
 0. **Published, and CI is green.** The repository is public and every job passed on
-   `64c2d8d`: the Python reference, the core on Linux and Windows, the design
+   `64c2d8d` and again on `4647a75`: the Python reference, the core on Linux and Windows, the design
    sync, the Native AOT build, both Windows compiles of the shell, and the signed MSIX for x64
    and ARM64. That includes the shell changes made after `489180f` (habit persistence and the
    on-device classifier in the bar), which had not been compiled before. Still to do on the
@@ -101,7 +123,8 @@ In order:
    a card, a layout-rule mod, the next chart lands there). What it has seen and which offers it
    has made are saved in `habits.json` in the state folder, so a restart keeps a habit in
    progress and never repeats an offer, answered either way (written and tested in the core;
-   the shell wiring has not yet run on Windows). Still worth adding: rules for files opened
+   the shell wiring compiles and the Windows self-test drives the whole loop in CI, but with the saved
+   file isolated, so a real restart on your machine is not yet checked). Still worth adding: rules for files opened
    from the bar.
 5. **More artifact types** (report, table, diagram) as new recipes, the same way
    charts work: Claude writes a compact spec, local code validates and renders it. Today these
