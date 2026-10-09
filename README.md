@@ -14,6 +14,7 @@ windows and copy data between them by hand. The idea here is an intent-centric
 OS, where natural language, context and agents drive the work, and apps become
 one of several ways to get it done.
 
+- [Handoff](HANDOFF.md): where the project stands, decisions made, and what comes next
 - [Vision](docs/vision.md): the original concept, as first written
 - [Architecture](docs/architecture.md): the working design, and what changed from the concept and why
 - [Challenges](docs/challenges.md): the hard problems (security, latency, recovery, power, legacy apps, economics) and the plan for each

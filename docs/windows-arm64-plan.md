@@ -182,11 +182,16 @@ The cheapest token is the one never sent. In order of impact:
    layout rules are handled by local code. They are the most common requests
    and use no model at all.
 2. **Intent routing on the device's own chip.** The Surface Pro's Snapdragon
-   chip has an NPU, which makes it a Copilot+ PC. Windows offers an on-device
-   small language model (Phi Silica) through its Windows AI APIs, and ONNX
-   Runtime can run our own small classifier on the NPU. Either one can decide
-   between "open", "make" and "change" and fill in simple details, with no
-   cloud call. Which APIs are available on your Surface is a spike item.
+   chip has an NPU, which makes it a Copilot+ PC. The default router is our
+   own small classifier, run on the NPU through ONNX Runtime. It decides
+   between "open", "make" and "change" and fills in simple details, with no
+   cloud call. Windows' built-in on-device model is not the default for now.
+   Phi Silica needs a Limited Access Feature token from Microsoft, and
+   Microsoft is replacing it with Aion Instruct, which needs no token. Aion
+   Instruct reaches Insider builds in November 2026 and retail Windows in
+   January 2027, when Phi Silica is removed. We adopt Aion Instruct for
+   simple slot filling once it ships, and keep the classifier as the
+   fallback.
 3. **Data stays local; Claude writes the recipe.** For "spending by month
    from the Q3 budget", Claude sees the column names and a few sample rows,
    and returns a chart spec that includes the grouping and sums. Local code
@@ -230,9 +235,19 @@ These are what make it feel part of Windows rather than an app sitting on top:
 - **Respects Do Not Disturb** and focus sessions.
 - **Pen.** Annotate any artifact with Windows Ink; annotations are saved
   alongside it.
-- **On-device text recognition** (Windows' OCR) for reading an image or a
-  window on request, with no tokens spent.
+- **On-device text recognition** (Windows' OCR, available in Windows App SDK
+  1.7.1) for reading an image or a window on request, with no tokens spent.
 - **API key** encrypted with Windows' own per-user data protection.
+- **Part of Windows' own agent system** (in preview as of October 2026):
+  - **Agent Launcher and App Actions.** Windows can hand a request to us, and
+    our artifact actions ("chart this", "summarise this") appear where Windows
+    offers actions on content.
+  - **Windows' built-in MCP connectors** (File Explorer, Settings). We use
+    them as tools, but every call still goes through our approval card. Windows
+    grants these per app, with coarse Always / Ask / Never folder access, so
+    our typed-action consent is the finer layer on top.
+  - **Package identity is the gate.** All of these, and the Copilot key,
+    require the MSIX packaging this plan already uses.
 
 ## Mods: customize everything
 
@@ -334,7 +349,7 @@ way.
 
 | Milestone | Delivers | Done when |
 |---|---|---|
-| **M0: spike** | Packaged ARM64 app installs with the test certificate. A Win32 popup with native content, rounded corners, shadow and no frame shows a native chart. Lists windows and moves one. Hotkey, and the Copilot key if allowed. Checks which on-device AI APIs the Surface offers. Checks whether Native AOT works. | Each item works, or has a recorded fallback, on your Surface |
+| **M0: spike** | Packaged ARM64 app installs with the test certificate. A Win32 popup with native content, rounded corners, shadow and no frame shows a native chart. Lists windows and moves one. Hotkey, and the Copilot key if allowed. A small intent classifier runs on the NPU through ONNX Runtime. Windows OCR works. Registers as an Agent Launcher. Checks whether Native AOT works. | Each item works, or has a recorded fallback, on your Surface |
 | **M1: open anything** | Intent Bar, local intent grammar, Search-index lookup, native viewers, preview handlers, default-app opening with placement, layout engine, "put it back" | "open X" lands in free space in every test arrangement below, within the latency budget |
 | **M2: make things** | C# core with the Claude planner (official C# SDK), scoped read-only tools and a `create_artifact` tool; native renderers; local data execution; subject-only windows; artifacts saved as files; on-device routing if available | Each content type streams in with no chrome; the token log shows spreadsheet charts cost about the same at any row count |
 | **M3: mods** | Manifest format; declarative, scripted and web levels; capabilities; widget, artifact-type, command, layout-rule and theme mods; "make me a mod" flow | You can create, tweak, disable and remove a mod by asking |
@@ -372,13 +387,43 @@ Build 1 is M0 through M4. The protected-path and scoped-read rules from Phase
 | Risk | Check |
 |---|---|
 | Frameless native windows (Win32 popups holding XAML islands) behave differently than expected | M0 spike; fallback is a WinUI window with its title bar and border turned off |
-| On-device AI APIs not available, or restricted, on this Surface | M0 check; fallback is our own small classifier on ONNX Runtime, then the local grammar alone |
+| NPU classifier slower or less accurate than expected | M0 check; fallback is the local grammar plus a cloud call for unclear phrasing |
+| Windows' agent features (Agent Launcher, App Actions, MCP connectors, agent workspace) are mostly preview and may change | Treat them as optional integrations behind one adapter; the app works without them |
+| Phi Silica's removal in January 2027 | Never depend on it; adopt Aion Instruct only once it ships |
 | Some apps resist being moved: store apps, single-instance apps like Office, apps running as administrator (Windows blocks moving those) | Best effort; leave the window alone rather than fight it, and log it |
 | Pixel and scaling mismatches | All coordinates go through one conversion layer; test at 150% and 200% |
 | The app can't be built or run in our Linux development container | Windows CI builds every push; you test on the Surface; core logic is unit-tested on any OS |
 | Unsigned or test-signed builds blocked | Test certificate now; proper signing before wider testing |
 | Preview handlers missing or slow for some types | Fall back to opening in the default app |
 | Native chart renderer can't cover a requested chart | Fall back to rendering it in the sandboxed web view |
+
+## Where this stands against Googlebook, Windows and macOS
+
+As of October 2026 (details in `reports/Googlebook OS and Gemini app creation.md`):
+
+| Platform | Creating by asking | Agents | Consent |
+|---|---|---|---|
+| Google's Googlebook (shipped 4 October 2026) | Create My Widget: widgets only, refined by further requests; no sharing, export or developer API | Gemini Spark (cloud agent), Magic Pointer (on-screen help) | Per-app access and purchase confirmations; no published sandbox design for generated widgets |
+| Windows 11 | No natural-language widget or app builder in the shell; builders live in Microsoft 365 | Copilot Actions (computer use), agent workspace, MCP registry: mostly preview | Device-wide admin switch; Always / Ask / Never per known folder |
+| macOS 27 (shipped 14 September 2026) | Describe a Shortcut, Describe an Extension | Siri actions across apps and on screen | App permissions and Shortcuts prompts |
+
+**Don't compete where Windows already wins:**
+- a general computer-use agent;
+- changing settings by asking;
+- actions on whatever is on screen;
+- basic file operations.
+
+Use Windows' versions as tools under our consent layer instead.
+
+**Compete where nobody is strong:**
+- consent bound to the exact actions shown, with every outgoing byte visible;
+- an undo journal for everything the agent changes;
+- subject-only windows placed deterministically into free space;
+- mods that are user-owned files, made by asking, with declared and approved
+  capabilities, and shareable as folders. This goes well beyond Create My
+  Widget, which makes widgets only;
+- choice of model;
+- a path to Linux.
 
 ## How this changes the wider plan
 
