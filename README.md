@@ -16,8 +16,9 @@ one of several ways to get it done.
 
 - [Vision](docs/vision.md): the original concept, as first written
 - [Architecture](docs/architecture.md): the working design, and what changed from the concept and why
+- [Challenges](docs/challenges.md): the hard problems (security, latency, recovery, power, legacy apps, economics) and the plan for each
 - [Threat model](docs/threat-model.md): prompt injection and how the design contains it
-- [Roadmap](docs/roadmap.md): from this prototype to a desktop shell
+- [Roadmap](docs/roadmap.md): phases from this prototype to a desktop shell, each with an exit test
 
 ## The core loop
 
@@ -117,5 +118,6 @@ they need no network or API key.
 
 ## Status
 
-Early prototype. No license has been chosen yet, and the project name is an
-open question (see the [roadmap](docs/roadmap.md#open-questions)).
+Early prototype, planned as an open-source project. The license (Apache-2.0
+recommended) and the project name are still open questions; see the
+[roadmap](docs/roadmap.md#open-questions).
