@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 233 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 248 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
