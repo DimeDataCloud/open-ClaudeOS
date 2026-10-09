@@ -103,10 +103,12 @@ internal sealed partial class IntentBarWindow : Window
         Input.Focus(FocusState.Programmatic);
     }
 
-    /// <summary>What the bar looks like right now, after typing <paramref name="text"/>. For the self-test.</summary>
-    public BarProbe Probe(string text)
+    /// <summary>Type into the bar as a person would. The results follow a moment later (TextChanged is queued).</summary>
+    public void TypeForTest(string text) => Input.Text = text;
+
+    /// <summary>What the bar looks like right now. For the self-test.</summary>
+    public BarProbe Probe()
     {
-        Input.Text = text;
         var focused = FocusManager.GetFocusedElement(Content.XamlRoot) == Input;
         return new BarProbe(
             AppWindow.IsVisible,
