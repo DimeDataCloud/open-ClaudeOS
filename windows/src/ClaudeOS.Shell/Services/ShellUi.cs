@@ -1,4 +1,5 @@
 using ClaudeOS.Core.Layout;
+using ClaudeOS.Shell.Controls;
 using ClaudeOS.Core.Mods;
 using ClaudeOS.Core.Safety;
 using ClaudeOS.Core.Presence;
@@ -8,7 +9,7 @@ using Microsoft.UI.Dispatching;
 namespace ClaudeOS.Shell.Services;
 
 /// <summary>The WinUI side of <see cref="IShellUi"/>: opens the windows, always on the UI thread.</summary>
-internal sealed class ShellUi(DispatcherQueue dispatcher, Placer placer, PresenceMachine presence) : IShellUi
+internal sealed class ShellUi(DispatcherQueue dispatcher, Placer placer, PresenceMachine presence, HabitService habits) : IShellUi
 {
     // Windows the user has not closed. Holding them here keeps them alive.
     private readonly List<object> _open = [];
@@ -53,6 +54,7 @@ internal sealed class ShellUi(DispatcherQueue dispatcher, Placer placer, Presenc
         var window = new SubjectWindow(altText, svg, presence, edit);
         Keep(window, window);
         await window.ShowAsync(placement.Bounds);
+        Watch(window, "chart");
         return (IChartWindow)window;
     });
 
@@ -70,7 +72,12 @@ internal sealed class ShellUi(DispatcherQueue dispatcher, Placer placer, Presenc
         var window = new WidgetWindow(name, bind);
         Keep(window, window);
         window.ShowAt(spot.Bounds);
+        Watch(window, "widget");
     });
+
+    /// <summary>Where the person puts a window after it opens is what the habit tracker learns from.</summary>
+    private void Watch(Microsoft.UI.Xaml.Window window, string kind) =>
+        new MoveWatcher(window, bounds => habits.Observe(kind, bounds)).ArmAfter(TimeSpan.FromMilliseconds(1500));
 
     private void Keep(Microsoft.UI.Xaml.Window window, object keep)
     {

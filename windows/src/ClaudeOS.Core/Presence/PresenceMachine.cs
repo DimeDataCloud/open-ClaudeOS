@@ -134,7 +134,7 @@ public sealed class PresenceMachine(TimeProvider? clock = null, bool reducedMoti
     private PresenceFrame OnRouted(Routed r)
     {
         // Local routes are over before you could read a state; show the shimmer with the result.
-        if (r.Routing.Source is RouteSource.Grammar or RouteSource.Npu && r.Routing.Intent is OpenIntent or FindIntent or WindowIntent or UndoIntent)
+        if (r.Routing.Source is RouteSource.Grammar or RouteSource.Npu && r.Routing.Intent is OpenIntent or FindIntent or WindowIntent or UndoIntent or SuggestionReplyIntent)
         {
             return Make(PresenceState.Understanding, r.What ?? "On it", intensity: 0.9);
         }

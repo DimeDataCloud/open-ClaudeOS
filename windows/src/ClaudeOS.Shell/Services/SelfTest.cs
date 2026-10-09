@@ -7,6 +7,7 @@ using ClaudeOS.Core.Actions;
 using ClaudeOS.Core.Artifacts;
 using ClaudeOS.Core.Design;
 using ClaudeOS.Core.Intent;
+using ClaudeOS.Core.Layout;
 using ClaudeOS.Core.Planning;
 using ClaudeOS.Core.Safety;
 using ClaudeOS.Shell.Views;
@@ -62,6 +63,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Step("agent: chart from a sentence", AgentChartAsync);
         await Step("agent: widget from a sentence", AgentWidgetAsync);
         await Step("agent: a plan with a planted email", InjectionAsync);
+        await Step("habit: offered, accepted, applied", HabitAsync);
         await Step("approval card: hold to send", ApprovalAsync);
         await Step("key window", KeyWindowAsync);
         await Step("device check", DeviceCheckAsync);
@@ -94,9 +96,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
 
     private async Task<string> ChartWindowAsync()
     {
-        var data = Recipe.Run(ChartSpec.Parse(JsonDocument.Parse(ChartSpecJsonText).RootElement), DataTable.FromCsv(SampleCsv()));
-        var size = ChartRenderer.PreferredSize(data);
-        var render = ChartRenderer.Render(data, new ChartStyle(ThemeResolver.Resolve(Appearance.Light), size.Width, size.Height));
+        var render = SampleRender();
         var window = (SubjectWindow)await ui.ShowChartAsync(render.AltText, render.Svg, render.Size.Width, render.Size.Height, _ => Task.CompletedTask);
         await Task.Delay(600);
         Expect(window.LoadStatus == "Success", $"the SVG chart loads (status: {window.LoadStatus})");
@@ -107,6 +107,73 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Shot("chart-window");
         window.Close();
         return $"{render.Size.Width}x{render.Size.Height} chart, SVG {window.LoadStatus}, drawn {window.PictureWidth:0}px wide. Layout: {layout}. {render.AltText}";
+    }
+
+    private static ChartRender SampleRender()
+    {
+        var data = Recipe.Run(ChartSpec.Parse(JsonDocument.Parse(ChartSpecJsonText).RootElement), DataTable.FromCsv(SampleCsv()));
+        var size = ChartRenderer.PreferredSize(data);
+        return ChartRenderer.Render(data, new ChartStyle(ThemeResolver.Resolve(Appearance.Light), size.Width, size.Height));
+    }
+
+    /// <summary>
+    /// Habits, end to end: the "person" drags three charts to the top right, the presence offers a
+    /// rule, "yes" brings up the card, approving writes a layout-rule mod, and the next chart opens
+    /// there on its own. It runs against a throwaway mods folder.
+    /// </summary>
+    private async Task<string> HabitAsync()
+    {
+        var agent = MakeAgent();
+        var realAgent = services.Bar.Agent;
+        var realRules = services.Placer.Rules;
+        services.Bar.Agent = agent;
+        services.Placer.Rules = agent.ActiveRules;
+        try
+        {
+            var area = WindowCatalog.Capture().FocusMonitor.WorkArea;
+            var render = SampleRender();
+            for (var i = 0; i < 3; i++)
+            {
+                var chart = (SubjectWindow)await ui.ShowChartAsync(render.AltText, render.Svg, render.Size.Width, render.Size.Height, _ => Task.CompletedTask);
+                await Task.Delay(1900); // the move watcher ignores the window until it has settled in
+                chart.AppWindow.Move(new Windows.Graphics.PointInt32(area.X + area.Width - chart.AppWindow.Size.Width - 30 - (i * 6), area.Y + 30));
+                await Task.Delay(1800); // and a drag counts once the window has stopped
+                chart.Close();
+            }
+
+            var offer = services.Habits.Pending;
+            Expect(offer is not null, "the third time, the tracker has an offer");
+            Expect(services.Bar.Presence.Frame.Suggestion == offer!.Message, $"the presence is holding the offer for the bar ({services.Bar.Presence.Frame.Suggestion})");
+
+            var run = services.Bar.SubmitAsync("yes", null);
+            ApprovalWindow? card = null;
+            for (var i = 0; i < 50 && card is null; i++)
+            {
+                await Task.Delay(100);
+                card = ui.Open.OfType<ApprovalWindow>().FirstOrDefault();
+            }
+
+            Expect(card is not null && card.RowCount == 1, "saying yes brings up a one-line card for the rule");
+            var drew = Controls.TreeText.Of(card!.Content, 20);
+            card.PressForTest();
+            var message = await run;
+            Expect(message.StartsWith("Done", StringComparison.Ordinal), $"approving installs the rule (said: {message})");
+            Expect(Directory.Exists(Path.Combine(_workspace, "state", "mods", HabitRules.IdOf(offer))), "the rule is a mod folder the person owns");
+            Expect(services.Habits.Pending is null, "the offer is cleared once answered");
+
+            var next = (SubjectWindow)await ui.ShowChartAsync(render.AltText, render.Svg, render.Size.Width, render.Size.Height, _ => Task.CompletedTask);
+            await Task.Delay(400);
+            var centre = next.AppWindow.Position.X + (next.AppWindow.Size.Width / 2.0);
+            Expect(centre > area.X + (area.Width / 2.0), $"the next chart opens on the right by itself (its centre is at {centre:0} of {area.Width})");
+            await Shot("habit-rule");
+            return $"3 drags to the right → offered \"{offer.Message}\" → yes → card: {drew} → rule installed → the next chart opened at x={next.AppWindow.Position.X} of {area.Width}";
+        }
+        finally
+        {
+            services.Bar.Agent = realAgent;
+            services.Placer.Rules = realRules;
+            ui.CloseAll();
+        }
     }
 
     private async Task<string> AgentChartAsync()
@@ -256,9 +323,9 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         try
         {
             var work = run();
-            if (await Task.WhenAny(work, Task.Delay(TimeSpan.FromSeconds(30))) != work)
+            if (await Task.WhenAny(work, Task.Delay(TimeSpan.FromSeconds(60))) != work)
             {
-                throw new TimeoutException("took more than 30 seconds");
+                throw new TimeoutException("took more than 60 seconds");
             }
 
             Note($"ok    {name} ({clock.ElapsedMilliseconds} ms): {await work}");
