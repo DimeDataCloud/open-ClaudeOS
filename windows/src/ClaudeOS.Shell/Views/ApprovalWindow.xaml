@@ -29,10 +29,14 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Grid Grid.Column="0" ColumnSpacing="10" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <Ellipse x:Name="RiskDot" Width="8" Height="8" VerticalAlignment="Center" />
-                <TextBlock x:Name="RiskLine" Style="{StaticResource CosCaptionText}" TextWrapping="Wrap" MaxWidth="250" />
-            </StackPanel>
+                <TextBlock x:Name="RiskLine" Grid.Column="1" Style="{StaticResource CosCaptionText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </Grid>
 
             <Button x:Name="Decline" Grid.Column="1" Content="Not now" MinHeight="44" Style="{StaticResource CosQuietButton}"
                     AutomationProperties.Name="Decline. Nothing will change." />

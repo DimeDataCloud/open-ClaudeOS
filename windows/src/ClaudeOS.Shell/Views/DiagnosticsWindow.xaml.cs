@@ -50,7 +50,7 @@ internal sealed partial class DiagnosticsWindow : Window
     public async Task RunAsync()
     {
         var monitor = WindowCatalog.Capture(_hwnd).FocusMonitor;
-        var width = (int)Math.Round(620 * monitor.Scale);
+        var width = (int)Math.Round(720 * monitor.Scale);
         var height = (int)Math.Round(480 * monitor.Scale);
         AppWindow.MoveAndResize(new RectInt32(monitor.WorkArea.X + ((monitor.WorkArea.Width - width) / 2), monitor.WorkArea.Y + ((monitor.WorkArea.Height - height) / 3), width, height));
         AppWindow.Show();

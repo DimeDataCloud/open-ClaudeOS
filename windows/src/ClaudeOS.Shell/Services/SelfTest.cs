@@ -101,6 +101,8 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Task.Delay(600);
         Expect(window.LoadStatus == "Success", $"the SVG chart loads (status: {window.LoadStatus})");
         Expect(window.PictureWidth > 50, $"the chart is laid out ({window.PictureWidth:0}px wide)");
+        var drawn = Controls.TreeText.Of(window.Content, 60);
+        Expect(drawn.Contains("Spending by month", StringComparison.Ordinal) && drawn.Contains("Jan", StringComparison.Ordinal) && drawn.Contains('$'), $"the chart has its title, axis labels and values, not only bars (it drew: {drawn})");
         var layout = Audit(window, "the chart window");
         await Shot("chart-window");
         window.Close();

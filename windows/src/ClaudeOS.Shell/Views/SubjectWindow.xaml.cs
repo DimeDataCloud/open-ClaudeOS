@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media.Imaging;
+using ClaudeOS.Shell.Controls;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage;
@@ -120,24 +120,22 @@ internal sealed partial class SubjectWindow : Window, IChartWindow
         BusyLabel.Text = frame.Label;
     });
 
-    private async Task LoadAsync()
+    private Task LoadAsync()
     {
-        var source = new SvgImageSource();
-        using var stream = new InMemoryRandomAccessStream();
-        using (var writer = new DataWriter(stream))
+        try
         {
-            writer.WriteBytes(System.Text.Encoding.UTF8.GetBytes(_svg));
-            await writer.StoreAsync();
-            writer.DetachStream();
+            Picture.Child = SvgScene.Build(_svg);
+            LoadStatus = "Success";
+        }
+        catch (Exception e) when (e is System.Xml.XmlException or FormatException or ArgumentException or InvalidOperationException)
+        {
+            LoadStatus = "Failed: " + e.Message;
         }
 
-        stream.Seek(0);
-        var status = await source.SetSourceAsync(stream);
-        LoadStatus = status.ToString();
-        Picture.Source = source;
+        return Task.CompletedTask;
     }
 
-    /// <summary>How the last SVG load ended ("Success" when the picture is on screen).</summary>
+    /// <summary>How the last drawing ended ("Success" when the chart is on screen).</summary>
     public string LoadStatus { get; private set; } = "NotLoaded";
 
     public double PictureWidth => Picture.ActualWidth;
