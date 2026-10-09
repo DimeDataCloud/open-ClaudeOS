@@ -1,0 +1,12 @@
+{
+  "type": "chart",
+  "title": "Spending by month",
+  "data": { "source": "q3-budget.csv" },
+  "transform": [
+    { "derive": { "as": "month", "from": "date", "unit": "month" } },
+    { "group": { "by": ["month"], "aggregate": [{ "op": "sum", "field": "amount", "as": "spend" }] } }
+  ],
+  "mark": "bar",
+  "x": { "field": "month" },
+  "y": { "field": "spend", "title": "Spend", "format": "currency:USD" }
+}

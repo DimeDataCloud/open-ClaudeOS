@@ -1,0 +1,223 @@
+name: Package (Windows)
+
+# Builds an installable, test-signed MSIX for ARM64 (the Surface) and x64, and probes whether a
+# Native AOT publish works. Nothing here runs the app; see docs/testing.md for the on-device script.
+#
+# Signing: if the repository has the secrets CLAUDEOS_TEST_PFX_BASE64 and CLAUDEOS_TEST_PFX_PASSWORD
+# (made with tools/New-TestCertificate.ps1) that certificate signs the package, so you trust its .cer
+# once. Otherwise a throwaway certificate is made for this run and its .cer is published next to the
+# package. The private key never leaves the runner and is never in the repository.
+
+# The expensive one (Windows runners bill at twice the rate). It runs when the app or the packaging
+# changes, on main, and on demand: Actions > Package (Windows) > Run workflow, choosing a branch.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "windows/src/ClaudeOS.Shell/**"
+      - "windows/src/ClaudeOS.Core/**"
+      - "windows/src/ClaudeOS.Claude/**"
+      - "design/dist/**"
+      - "tools/**"
+      - ".github/workflows/package.yml"
+  workflow_dispatch:
+
+# contents: write lets the build attach its packages to the rolling "ci-latest" pre-release.
+permissions:
+  contents: write
+
+# A newer push waits for a running package build instead of cancelling it: this job is the slow one
+# and its result (the app running on a Windows desktop) is the thing worth seeing.
+concurrency:
+  group: package-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  msix:
+    name: MSIX (${{ matrix.platform }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ARM64, x64]
+    env:
+      PFX_BASE64: ${{ secrets.CLAUDEOS_TEST_PFX_BASE64 }}
+      PFX_PASSWORD: ${{ secrets.CLAUDEOS_TEST_PFX_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Signing certificate
+        id: cert
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "cert"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          if ($env:PFX_BASE64 -and $env:PFX_PASSWORD) {
+            [IO.File]::WriteAllBytes((Join-Path $dir "claudeos-test.pfx"), [Convert]::FromBase64String($env:PFX_BASE64))
+            $password = $env:PFX_PASSWORD
+            $cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $dir "claudeos-test.pfx"), $password)
+            [IO.File]::WriteAllBytes((Join-Path $dir "claudeos-test.cer"), $cert.Export("Cert"))
+            "mode=repository secret (stable signature)" >> $env:GITHUB_OUTPUT
+          } else {
+            $password = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
+            Write-Host "::add-mask::$password"
+            ./tools/New-TestCertificate.ps1 -OutDir $dir -Password (ConvertTo-SecureString $password -AsPlainText -Force) | Out-Null
+            "mode=throwaway certificate (new .cer every run)" >> $env:GITHUB_OUTPUT
+          }
+          "PFX_PATH=$(Join-Path $dir 'claudeos-test.pfx')" >> $env:GITHUB_ENV
+          "SIGN_PASSWORD=$password" >> $env:GITHUB_ENV
+          "CER_PATH=$(Join-Path $dir 'claudeos-test.cer')" >> $env:GITHUB_ENV
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:GITHUB_WORKSPACE "out"
+          msbuild windows/src/ClaudeOS.Shell/ClaudeOS.Shell.csproj /restore /v:minimal "/flp:logfile=package-errors.log;errorsonly" `
+            /p:Configuration=Release /p:Platform=${{ matrix.platform }} `
+            /p:GenerateAppxPackageOnBuild=true /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly `
+            "/p:AppxPackageDir=$out\" `
+            /p:AppxPackageSigningEnabled=true "/p:PackageCertificateKeyFile=$env:PFX_PATH" "/p:PackageCertificatePassword=$env:SIGN_PASSWORD"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item $env:CER_PATH (Join-Path $out "claudeos-test-${{ matrix.platform }}.cer")
+          Get-ChildItem $out -Recurse -Include *.msix, *.cer | ForEach-Object { Write-Host $_.FullName }
+
+      - name: What went wrong
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path package-errors.log) {
+            Get-Content package-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 25
+          }
+
+      - uses: actions/upload-artifact@v4
+        # Artifact storage is a per-account quota that can be exhausted; the build itself is still
+        # proven by the step above and by the self-test below.
+        continue-on-error: true
+        with:
+          name: open-ClaudeOS-${{ matrix.platform }}
+          path: |
+            out/**/*.msix
+            out/**/*.cer
+          if-no-files-found: warn
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          "### open-ClaudeOS ${{ matrix.platform }} package`n`nSigned with: ${{ steps.cert.outputs.mode }}`n`nInstall: trust the .cer once (Local Machine > Trusted People), then open the .msix. See docs/testing.md." >> $env:GITHUB_STEP_SUMMARY
+
+      # GitHub's artifact store is a per-account quota and can be full (this repo's was). Release assets
+      # are not part of it, so the installable packages are also attached to one rolling pre-release.
+      - name: Attach the package to the rolling pre-release
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "ci-latest"
+          $assets = @(Get-ChildItem out -Recurse -Include *.msix, claudeos-test-*.cer | ForEach-Object { $_.FullName })
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Latest CI build" --notes "Rolling pre-release: the newest test-signed packages from CI. Trust the matching .cer once (Local Machine > Trusted People), then open the .msix. Not for production." *> $null
+          }
+          gh release upload $tag @assets --clobber
+          gh release edit $tag --notes "Built from $env:GITHUB_SHA. Trust the .cer that matches your package once (Local Machine > Trusted People), then open the .msix. A throwaway certificate is made for each build unless the repository has the signing secrets, so a new build may need its .cer trusted again. Test build, not for production."
+          $global:LASTEXITCODE = 0
+
+      - name: Install the package (x64 only)
+        if: matrix.platform == 'x64'
+        id: install
+        shell: pwsh
+        run: |
+          $cer = Get-ChildItem out -Recurse -Filter *.cer | Select-Object -First 1
+          $msix = Get-ChildItem out -Recurse -Filter *.msix | Select-Object -First 1
+          Import-Certificate -FilePath $cer.FullName -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
+          Add-AppxPackage -Path $msix.FullName
+          $package = Get-AppxPackage -Name OpenClaudeOS.Dev
+          if (-not $package) { throw "package did not install" }
+          Write-Host "Installed $($package.PackageFullName)"
+          "pfn=$($package.PackageFamilyName)" >> $env:GITHUB_OUTPUT
+
+      - name: Run it and let it test itself (x64 only)
+        if: matrix.platform == 'x64'
+        shell: pwsh
+        env:
+          PFN: ${{ steps.install.outputs.pfn }}
+        run: |
+          $state = Join-Path $env:LOCALAPPDATA "Packages\$env:PFN\LocalState"
+          New-Item -ItemType Directory -Force -Path $state | Out-Null
+          # Something for the file search to find.
+          $docs = [Environment]::GetFolderPath("MyDocuments")
+          New-Item -ItemType Directory -Force -Path $docs | Out-Null
+          "date,amount`n2026-01-01,1" | Set-Content (Join-Path $docs "Q3 Budget.csv")
+          Remove-Item (Join-Path $state "selftest.txt") -ErrorAction SilentlyContinue
+          New-Item (Join-Path $state "selftest.flag") -ItemType File | Out-Null
+
+          Start-Process "shell:AppsFolder\$env:PFN!App"
+          $report = Join-Path $state "selftest.txt"
+          $deadline = (Get-Date).AddSeconds(180)
+          while (-not (Test-Path $report) -and (Get-Date) -lt $deadline) {
+            if (-not (Get-Process ClaudeOS -ErrorAction SilentlyContinue) -and ((Get-Date) -gt $deadline.AddSeconds(-150))) { break }
+            Start-Sleep -Seconds 2
+          }
+
+          if (Test-Path $report) {
+            $text = Get-Content $report -Raw
+            Write-Host $text
+            "### Shell self-test (x64, Windows desktop)`n``````n$text``````" >> $env:GITHUB_STEP_SUMMARY
+            if ($text -notmatch "RESULT: all checks passed") { exit 1 }
+          } else {
+            Write-Host "::error::The app did not write a self-test report."
+            Write-Host "Process running: $([bool](Get-Process ClaudeOS -ErrorAction SilentlyContinue))"
+            Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Level = 2; StartTime = (Get-Date).AddMinutes(-10) } -MaxEvents 6 -ErrorAction SilentlyContinue |
+              ForEach-Object { "$($_.TimeCreated) $($_.ProviderName): $(($_.Message -replace '\s+', ' ').Substring(0, [Math]::Min(700, $_.Message.Length)))" }
+            Get-ChildItem (Join-Path $env:LOCALAPPDATA "Packages\$env:PFN") -Recurse -Filter audit.jsonl -ErrorAction SilentlyContinue |
+              ForEach-Object { Get-Content $_.FullName -Tail 5 }
+            exit 1
+          }
+
+      - name: Pictures of the running shell (x64 only)
+        if: always() && matrix.platform == 'x64' && steps.install.outcome == 'success'
+        shell: pwsh
+        env:
+          PFN: ${{ steps.install.outputs.pfn }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $shots = Join-Path $env:LOCALAPPDATA "Packages\$env:PFN\LocalState\shots"
+          if (Test-Path $shots) {
+            $zip = Join-Path $env:RUNNER_TEMP "selftest-shots.zip"
+            Compress-Archive -Path "$shots\*" -DestinationPath $zip -Force
+            if ('${{ github.event_name }}' -ne 'pull_request' -or '${{ github.event.pull_request.head.repo.full_name }}' -eq '${{ github.repository }}') { gh release upload ci-latest $zip --clobber }
+            Get-ChildItem $shots | ForEach-Object { Write-Host "$($_.Name) $($_.Length) bytes" }
+          } else { Write-Host "no pictures were taken" }
+          $global:LASTEXITCODE = 0
+
+  aot-probe:
+    name: Native AOT probe
+    runs-on: windows-latest
+    # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist. It builds (the
+    # shell publishes for win-x64), but the shell would fail at the first Claude request because the
+    # official Anthropic SDK needs reflection-based JSON (see docs/stack-decision.md), so the shell
+    # ships on the regular runtime. The job runs with every package build so that a change in the SDK
+    # or in our code shows up here; its result and the first errors are written to the run summary.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish with Native AOT
+        id: aot
+        shell: pwsh
+        run: |
+          dotnet publish windows/src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -r win-x64 -p:Platform=x64 -p:PublishAot=true -p:WindowsPackageType=None -v:minimal "-flp:logfile=aot-errors.log;errorsonly"
+          $ok = ($LASTEXITCODE -eq 0)
+          "### Native AOT publish (win-x64)`n`nResult: $(if ($ok) { 'worked' } else { 'did not work yet' })" >> $env:GITHUB_STEP_SUMMARY
+          if (-not $ok -and (Test-Path aot-errors.log)) {
+            "`n``````n$((Get-Content aot-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 15) -join "`n")`n``````" >> $env:GITHUB_STEP_SUMMARY
+          }
+          exit $LASTEXITCODE

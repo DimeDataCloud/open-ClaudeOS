@@ -1,126 +1,181 @@
 # open-ClaudeOS
 
-An intent-centric layer for the desktop. You say what you want done; an agent
-works out a plan; the system shows you exactly what will happen, and does only
-that once you approve.
+**Say what you want. See exactly what will happen. Approve once.**
+
+An open-source, intent-driven layer for the desktop, built first for Windows 11
+on ARM. A small, calm bar answers in place; Claude makes things for you and
+helps you use your computer, and everything it does is shown to you in full,
+approved once, and undoable.
 
 > Independent community project, not affiliated with or endorsed by Anthropic.
-> "Claude" is a trademark of Anthropic.
+> "Claude" is a trademark of Anthropic. See [NOTICE](NOTICE).
 
-## The idea
+![The Intent Bar](docs/images/bar-light.png)
 
-Today's operating systems are app-centric: you open applications, arrange
-windows and copy data between them by hand. The idea here is an intent-centric
-OS, where natural language, context and agents drive the work, and apps become
-one of several ways to get it done.
+## The idea: probabilistic planning, deterministic execution
 
-- [Handoff](HANDOFF.md): where the project stands, decisions made, and what comes next
-- [Vision](docs/vision.md): the original concept, as first written
-- [Architecture](docs/architecture.md): the working design, and what changed from the concept and why
-- [Challenges](docs/challenges.md): the hard problems (security, latency, recovery, power, legacy apps, economics) and the plan for each
-- [Build 1: Windows on ARM](docs/windows-arm64-plan.md): the first test build for a Surface Pro: instant file opening, subject-only artifact windows, mods
-- [Stack decision](docs/stack-decision.md): why native C#, WinUI 3, Composition and Windows ML, with the evidence and what would change it
-- [Threat model](docs/threat-model.md): prompt injection and how the design contains it
-- [Roadmap](docs/roadmap.md): phases from this prototype to a desktop shell, each with an exit test
+A model is good at working out *what* to do and bad at being trusted with the
+keys. So this project splits the two:
 
-## The core loop
+- **The model proposes.** It writes a plan as typed actions, a chart as a small
+  recipe, a widget as a small manifest. It never executes anything.
+- **Deterministic code decides.** Policy, consent, placement, routing and undo
+  are plain code with tests. No instruction hidden in a file, email or web page
+  can change them.
+- **You approve what you can see.** The approval card is generated from the
+  typed actions, never from the model's description of them. A grant covers
+  exactly those actions and nothing else.
 
 ```
-intent ─▶ explore (read-only, scoped) ─▶ plan ─▶ policy check ─▶ preview (staged diff)
-       ─▶ one approval ─▶ grant for those exact actions ─▶ commit (undo journal)
-       ─▶ external effects ─▶ audit log
+intent ─▶ route locally ─▶ (only if needed) Claude plans ─▶ policy ─▶ the card
+       ─▶ one approval ─▶ grant bound to those exact actions ─▶ run ─▶ undo journal
 ```
 
-1. **The model proposes; deterministic code decides.** Policy and enforcement
-   are plain code. No prompt, including one hidden in a file the agent reads,
-   can change them.
-2. **Consent is per plan and bound to its actions.** The approval card is
-   generated from the typed actions (full diff, full outbound content), not
-   from the model's description. The approval covers those actions and nothing
-   else.
-3. **Local changes are undoable; external ones are explicit.** File changes are
-   staged, previewed and journaled. Anything that leaves the machine is shown
-   in full and always needs approval.
+### Fast things never touch a model
 
-## What is here today: Phase 0
+Opening a file, finding a file and moving a window are answered locally in
+milliseconds by a grammar, a file index and a layout engine. Offline, they still
+work. Claude is for making and thinking, and the interface says so when it is
+used. That is also what keeps it cheap: the zero-token path is the default, and
+when Claude is used it sees a *profile* of your data, not the data (a 5,000-row
+sheet costs about what a 5-row one does).
 
-A Python CLI that runs that loop for file and messaging tasks inside one
-workspace directory. There is no desktop shell yet; the terminal stands in for
-the Intent Bar.
+## What it does
 
-| Module | Role |
+| | |
 |---|---|
-| [`planner.py`](src/claudeos/planner.py) | Claude planner: read-only tools, `submit_plan`, revises on policy feedback |
-| [`actions.py`](src/claudeos/actions.py) | Typed actions with effect classes (`local`, `external`) |
-| [`policy.py`](src/claudeos/policy.py) | Deterministic policy: protected paths, risk notes, trusted domains |
-| [`sandbox.py`](src/claudeos/sandbox.py) | Copy-on-write overlay: staged changes, diff, journaled commit, undo |
-| [`consent.py`](src/claudeos/consent.py) | Approval card and plan-bound, expiring grants |
-| [`executor.py`](src/claudeos/executor.py) | Runs only granted actions; dry-run outbox connector |
-| [`session.py`](src/claudeos/session.py), [`cli.py`](src/claudeos/cli.py) | The loop, and the `claudeos` command |
+| ![A chart](docs/images/chart-light.png) | **Make things, in their own window.** "Chart spend by month" opens a chart with no title bar or toolbar: just the chart. Drag it from anywhere; say "make the bars blue" and Claude revises the recipe. It was drawn locally from every row; Claude saw only the column names and a few samples. |
+| ![Approval](docs/images/approval-injection-dark.png) | **See what will happen before it does.** One of these invoices has a hidden instruction to email the workspace to a stranger. The model didn't follow it, but if a plan did, the email would be on the card, flagged, and sending it takes a deliberate hold. A plan that touches a protected path is refused before you are asked. |
+| ![Made room](docs/images/made-room-dark.png) | **Windows find room.** New content goes where there is free space. When there isn't, the fewest windows move, by the smallest amount, and "put it back" restores the screen exactly. This is geometry, not AI. It also notices habits and only offers: put three charts in the top right and it asks whether new ones should open there; "yes" shows a card and writes a rule you can delete. |
+| ![A widget](docs/images/widget-approval-light.png) | **Yours to change.** Widgets, themes and commands are small files you own (mods). Each says in plain words what it can read, you approve those words, and every read is checked against them. A mod that needs a calculation gets formulas, not code, and you see each one. Claude can write one from a sentence; you still approve it. |
+
+### The running shell
+
+These are pictures of the Windows app, taken by its own self-test in CI on a
+GitHub-hosted Windows Server 2025 VM (no GPU; Server draws square window corners
+where Windows 11 rounds them, and the accent is the default). They show what the
+code does, not the final polish; the prototype above is the intended look.
+
+| | |
+|---|---|
+| ![The approval card in the running shell](docs/images/shell-approval.png) | ![A chart in its own window](docs/images/shell-chart.png) |
+| A plan with an email planted by an invoice, on the real approval window: both recipients, flagged, with the full text that would be sent. Sending takes a hold. | A chart made from a sentence, drawn with native shapes and text, in a window with no chrome. |
+
+![The Intent Bar](docs/images/shell-bar.png)
+
+The design principles, the Spark (Claude's presence) and its states, the tokens
+and the accessibility rules are in [docs/design.md](docs/design.md).
+
+![The Spark's states](docs/images/presence-states.png)
 
 ## Try it
 
-```sh
-pip install -e ".[claude]"
+### 1. The design prototype (any browser, no install)
 
-# Work on a copy of the demo workspace (three invoices, one with a planted prompt injection)
-cp -r examples/invoices-demo /tmp/demo
+Open `design/prototype/index.html` in any browser. It is a high-fidelity stand-in for the shell, but it is not mocked: the data
+behind it (charts, placements, approval cards, widget previews) is generated by
+the real C# core (`dotnet run --project windows/src/ClaudeOS.Cli -- demo-data`).
 
-# Without a model: review and apply a hand-written plan
-claudeos apply examples/invoices-demo.plan.json --root /tmp/demo --trust-domain yourco.example
-
-# With Claude (needs ANTHROPIC_API_KEY, or a profile from `ant auth login`)
-claudeos do "Summarize September's invoices into a spreadsheet and draft an email to finance@yourco.example with the total" --root /tmp/demo
-
-claudeos undo    # revert the last commit
-claudeos log     # what was read, proposed, approved and done
-```
-
-The approval card for the demo plan:
-
-```
-What will actually happen (3 actions, plan eb7851a1b483):
-   1. LOCAL    write reports/2026-09-invoices.csv (146 bytes)
-            - new file
-   2. LOCAL    write reports/2026-09-summary.md (278 bytes)
-            - new file
-   3. EXTERNAL send email to finance@yourco.example: 'September invoices: 3,420.00 USD'
-            - leaves this machine; cannot be undone
-            | Hi,
-            | ...
-
-Staged file changes (nothing is written until you approve):
---- /dev/null
-+++ b/reports/2026-09-invoices.csv
-...
-Overall risk: HIGH
-```
-
-If a plan followed the planted instruction, the extra email would show up on
-the card with `recipient domain not on your trusted list: initech-billing.example`.
-A plan that touches a protected path such as `.env` or `.ssh/` is refused
-whole, before you are asked.
-
-## Limits of Phase 0
-
-- External actions are dry runs: they are written to an outbox, not sent.
-- Text files only; PDFs and office documents come in Phase 1.
-- No command execution. That needs a real isolation backend (bubblewrap, then
-  a microVM) and is Phase 1.
-- One workspace root per run.
-
-## Development
+### 2. The core on a terminal (any OS with the .NET 10 SDK)
 
 ```sh
-pip install -e ".[claude,dev]"
-pytest
+cd windows
+# Review and apply a hand-written plan. No model needed.
+cp -r ../examples/invoices-demo /tmp/demo
+dotnet run --project src/ClaudeOS.Cli -- apply ../examples/invoices-demo.plan.json --root /tmp/demo
+dotnet run --project src/ClaudeOS.Cli -- log
+dotnet run --project src/ClaudeOS.Cli -- undo
+
+# Draw a chart recipe locally from a CSV
+dotnet run --project src/ClaudeOS.Cli -- chart ../examples/charts/spend-by-month.chart.json \
+  --data ../examples/charts/q3-budget.csv --out spend.svg
+
+# The Intent Bar in a terminal (Linux, macOS or Windows): open, find, ask, undo
+dotnet run --project src/ClaudeOS.Cli -- shell --root ~/Documents
+
+# Review a mod the way you would before installing it: the card, its formulas, a preview
+dotnet run --project src/ClaudeOS.Cli -- mod ../examples/mods/battery-nudge/mod.json --set system.battery.percent=9
+
+# See how a request is routed (and that it never needs a model)
+dotnet run --project src/ClaudeOS.Cli -- route "open the q3 budget"
+
+# With Claude (needs ANTHROPIC_API_KEY)
+dotnet run --project src/ClaudeOS.Cli -- do "Summarize September's invoices into a spreadsheet" --root /tmp/demo
 ```
 
-The tests drive the planner with a scripted stand-in for the Claude client, so
-they need no network or API key.
+### 3. The Windows app (Windows 11, ARM64 or x64)
 
-## Status
+The *Package (Windows)* workflow builds a test-signed MSIX and attaches it to one rolling pre-release.
+Open the repository's **Releases**, choose **Latest CI build** (refreshed by the *Package (Windows)* workflow; run it from the Actions tab for any branch), and download the
+package for your machine (`..._ARM64.msix` for a Surface with Snapdragon,
+`..._x64.msix` otherwise) and the `.cer` with the same suffix. Trust the `.cer`
+once (Local Machine → Trusted People), then open the `.msix`. Press
+`Ctrl+Alt+Space`. Add your Anthropic API key from the tray menu; it is kept in
+the Windows credential store, never in a file.
+[docs/testing.md](docs/testing.md) has a ten-minute walk-through and the **Check
+this device** report that measures the milestone-0 targets on your hardware.
 
-Early prototype, planned as an open-source project. The license (Apache-2.0
-recommended) and the project name are still open questions; see the
-[roadmap](docs/roadmap.md#open-questions).
+## How it is built
+
+| | |
+|---|---|
+| Language, runtime | C# on .NET 10 |
+| Windows UI | WinUI 3 (Windows App SDK 2.5) for structure; Composition visuals for motion, so animation runs on the compositor; Win32 and DWM for frameless windows, rounded corners and acrylic |
+| Core | `ClaudeOS.Core`: zero dependencies, no UI, trim- and AOT-compatible (CI publishes it ahead of time and runs it) |
+| Claude | The official Anthropic C# SDK, in one project (`ClaudeOS.Claude`) behind `IModelClient` |
+| On-device models | A grammar, then a small classifier that runs on the CPU in well under a millisecond (built, measured below); Windows ML on the NPU can replace the classifier behind the same interface (designed) |
+| Packaging | Single-project MSIX, signed with a test certificate in CI |
+| Reference | The Phase 0 Python prototype, kept as the executable spec: plans have byte-identical digests in both |
+
+Why this stack, what was rejected and what would change the decision:
+[docs/stack-decision.md](docs/stack-decision.md). The architecture and the hard
+problems (security, latency, recovery, power, legacy apps, economics) are in
+[docs/architecture.md](docs/architecture.md) and
+[docs/challenges.md](docs/challenges.md); the threat model is in
+[docs/threat-model.md](docs/threat-model.md).
+
+```
+windows/src/ClaudeOS.Core    actions, policy, consent, undo, routing, layout, charts, mods, presence, planner
+windows/src/ClaudeOS.Claude  the one place that talks to the Anthropic SDK
+windows/src/ClaudeOS.Cli     the same core on a terminal
+windows/src/ClaudeOS.Shell   the WinUI 3 app
+windows/tests                434 tests
+design/                      tokens (one source → CSS, XAML, C#), prototype, screenshots
+src/claudeos, tests/         the Python reference (Phase 0)
+```
+
+## Status: honest version
+
+This is a pre-release. What has been verified, and by what:
+
+| | State |
+|---|---|
+| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 434 tests (about 91% of the hand-written core lines are exercised) (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
+| Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
+| Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
+| Windows shell | **Compiles for x64 and ARM64 in CI, packages as a signed MSIX, and in CI is installed on a Windows desktop and tests itself** (bar, chart, widget, approval card with a planted email, hold-to-approve). It has **not yet been run on a Surface**; expect polish bugs in how it looks and feels. That is milestone M0 |
+| On-device routing | **Built on the CPU and measured on phrases it never saw**: right 84% of the time (58 of 69), and when it answers (at least 80% sure, about half the time) it was right every time (35 of 35); everything else goes on to the cloud. Chat and file chores are never taken for commands. Swapping in an NPU model is the part that is designed, not built |
+| Agent Launcher | Designed; M0 measures it. The device check says plainly what is not wired up yet |
+| Native AOT | **Core and CLI: verified** (CI publishes and runs the native binary). **Shell: no**: the official Anthropic SDK needs reflection-based JSON, so the shell runs on the regular .NET runtime. [Details](docs/stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk) |
+| Scripted mods | **Built and tested on Linux**: formulas (no loops, no calls out) with a step budget, shown in full on the approval card; the native binary runs them. The shell draws them like any widget but that path has not run on Windows yet |
+| Terminal Intent Bar (`claudeos shell`) | **Built and tested; the native Linux binary runs it.** The same router, presence and file search as the desktop bar, with the Spark as one glyph; it is how to try the product on Linux or macOS today. There is no graphical Linux or macOS shell yet |
+| Web mods | Designed, deliberately refused until the WebView2 sandbox exists |
+
+Open decisions for the owner are in [HANDOFF.md](HANDOFF.md): the license is
+Apache-2.0 (the recommended default, taken so the project can be shared), and
+the name needs thought before a wide release because "Claude" is Anthropic's
+trademark.
+
+## Documents
+
+- [Design](docs/design.md): principles, tokens, the Spark, the approval card
+- [Testing](docs/testing.md): what is tested where, and the on-device script
+- [Architecture](docs/architecture.md), [Challenges](docs/challenges.md), [Threat model](docs/threat-model.md)
+- [Build 1: Windows on ARM](docs/windows-arm64-plan.md), [Stack decision](docs/stack-decision.md), [Roadmap](docs/roadmap.md)
+- [Vision](docs/vision.md): the original concept
+- [Handoff](HANDOFF.md): where the project stands
+- [Contributing](CONTRIBUTING.md), [Security](SECURITY.md)
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

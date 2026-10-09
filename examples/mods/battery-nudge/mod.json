@@ -1,0 +1,24 @@
+{
+  "id": "battery-nudge",
+  "name": "Battery nudge",
+  "version": "0.1.0",
+  "kind": "widget",
+  "level": "scripted",
+  "description": "Battery level, rounded, with a gentle note when it is time to plug in.",
+  "placement": { "anchor": "top-right", "size": [220, 96] },
+  "capabilities": ["system.battery"],
+  "defs": {
+    "pct": "round(system.battery.percent)",
+    "low": "pct < settings.threshold && !system.battery.charging",
+    "mood": "if(system.battery.charging, \"Charging\", if(low, \"Plug in soon\", \"Plenty left\"))"
+  },
+  "settings": {
+    "threshold": { "type": "number", "default": "20", "label": "Warn below (%)", "min": 5, "max": 50 }
+  },
+  "view": {
+    "stack": [
+      { "metric": "{pct}%", "label": "Battery" },
+      { "text": "{mood}", "subtext": "{if(low, \"under \" + settings.threshold + \"%\", \"\")}" }
+    ]
+  }
+}
