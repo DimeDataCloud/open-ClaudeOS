@@ -85,14 +85,15 @@ dotnet run --project src/ClaudeOS.Cli -- do "Summarize September's invoices into
 
 ### 3. The Windows app (Windows 11, ARM64 or x64)
 
-Every push builds a test-signed MSIX. In the repository's **Actions** tab, open
-the latest *Package (Windows)* run and download `open-ClaudeOS-ARM64` (Surface,
-Snapdragon) or `open-ClaudeOS-x64`. Trust the included `.cer` once (Local
-Machine → Trusted People), then open the `.msix`. Press `Ctrl+Alt+Space`.
-Add your Anthropic API key from the tray menu; it is kept in the Windows
-credential store, never in a file. [docs/testing.md](docs/testing.md) has a
-ten-minute walk-through and the **Check this device** report that measures the
-milestone-0 targets on your hardware.
+Every push builds a test-signed MSIX and attaches it to one rolling pre-release.
+Open the repository's **Releases**, choose **Latest CI build**, and download the
+package for your machine (`..._ARM64.msix` for a Surface with Snapdragon,
+`..._x64.msix` otherwise) and the `.cer` with the same suffix. Trust the `.cer`
+once (Local Machine → Trusted People), then open the `.msix`. Press
+`Ctrl+Alt+Space`. Add your Anthropic API key from the tray menu; it is kept in
+the Windows credential store, never in a file.
+[docs/testing.md](docs/testing.md) has a ten-minute walk-through and the **Check
+this device** report that measures the milestone-0 targets on your hardware.
 
 ## How it is built
 

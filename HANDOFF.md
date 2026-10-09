@@ -46,12 +46,13 @@ You asked for no questions, so these defaults were taken; each is easy to change
 
 ## For you (the owner)
 
-1. **Install it on the Surface.** Actions → *Package (Windows)* → the latest run →
-   artifact `open-ClaudeOS-ARM64` (also `x64`). Trust the `.cer` once (Local
-   Machine → Trusted People), open the `.msix`, press `Ctrl+Alt+Space`. If the
-   artifact is missing, GitHub's artifact storage quota for the account was
-   exhausted (it recalculates every few hours); re-run the workflow later.
-   [docs/testing.md](docs/testing.md) has the ten-minute walk-through.
+1. **Install it on the Surface.** Releases → **Latest CI build** (a rolling pre-release
+   the package workflow refreshes on every push): download
+   `ClaudeOS.Shell_*_ARM64.msix` and `claudeos-test-ARM64.cer`. Trust the `.cer` once
+   (Local Machine → Trusted People), open the `.msix`, press `Ctrl+Alt+Space`. (GitHub
+   Actions artifacts are not used: this account's artifact storage was full, so
+   uploads silently vanished.) [docs/testing.md](docs/testing.md) has the ten-minute
+   walk-through.
 2. **Run "Check this device"** from the tray menu and keep the report: it measures
    the M0 targets (hotkey latency, memory, frame rate, window enumeration, OCR).
 3. **Stable signing (optional).** Run `tools/New-TestCertificate.ps1` once and
