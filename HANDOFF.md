@@ -35,8 +35,10 @@ You asked for no questions, so these defaults were taken; each is easy to change
   frameless WinUI windows instead of XAML islands in Win32 popups, and **no Native
   AOT for the shell**: the official Anthropic SDK needs reflection-based JSON and
   fails at runtime under AOT. The core and CLI are AOT-clean and CI guards it.
-- **Charts are SVG from the core**, shown with `SvgImageSource`, so one renderer serves the
-  shell, the CLI and the prototype.
+- **Charts are SVG from the core, drawn natively.** One renderer serves the shell, the CLI
+  and the prototype. In the shell, `SvgScene` turns the SVG subset the renderer emits into
+  XAML shapes and text, because the system's SVG image control drops `<text>` and
+  8-digit colours (found by the first CI screenshots: charts came out as bare bars).
 - **Design**: warm paper and ink, one earned accent, springs not durations, the
   Spark as the only character. Principles and states in [docs/design.md](docs/design.md).
 - **Consent stays deterministic.** The approval card is generated from typed
