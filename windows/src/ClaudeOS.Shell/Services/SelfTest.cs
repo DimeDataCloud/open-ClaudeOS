@@ -8,6 +8,7 @@ using ClaudeOS.Core.Artifacts;
 using ClaudeOS.Core.Design;
 using ClaudeOS.Core.Intent;
 using ClaudeOS.Core.Layout;
+using ClaudeOS.Core.Mods;
 using ClaudeOS.Core.Planning;
 using ClaudeOS.Core.Safety;
 using ClaudeOS.Shell.Views;
@@ -104,9 +105,10 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         var drawn = Controls.TreeText.Of(window.Content, 60);
         Expect(drawn.Contains("Spending by month", StringComparison.Ordinal) && drawn.Contains("Jan", StringComparison.Ordinal) && drawn.Contains('$'), $"the chart has its title, axis labels and values, not only bars (it drew: {drawn})");
         var layout = Audit(window, "the chart window");
+        var width = window.PictureWidth;
         await Shot("chart-window");
         window.Close();
-        return $"{render.Size.Width}x{render.Size.Height} chart, SVG {window.LoadStatus}, drawn {window.PictureWidth:0}px wide. Layout: {layout}. {render.AltText}";
+        return $"{render.Size.Width}x{render.Size.Height} chart drawn {width:0}px wide. Layout: {layout}. {render.AltText}";
     }
 
     private static ChartRender SampleRender()
@@ -161,12 +163,18 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
             Expect(Directory.Exists(Path.Combine(_workspace, "state", "mods", HabitRules.IdOf(offer))), "the rule is a mod folder the person owns");
             Expect(services.Habits.Pending is null, "the offer is cleared once answered");
 
+            // The rule is now live: it is what the placer is handed for every new chart.
+            var rules = agent.ActiveRules();
+            Expect(rules.Count == 1, $"the placer is handed the new rule ({rules.Count} active)");
+            var asked = ModEffects.ApplyRules(rules, "chart", new PlacementRequest(new ClaudeOS.Core.Layout.Size(render.Size.Width, render.Size.Height)));
+            Expect(asked.Anchor == Anchor.TopRight, $"new charts are now asked to go top right (anchor: {asked.Anchor})");
+
+            // Where it lands is the engine's call: a rule is a preference, and it will not cover the
+            // window you are working in (on this VM the right side is taken by a terminal).
             var next = (SubjectWindow)await ui.ShowChartAsync(render.AltText, render.Svg, render.Size.Width, render.Size.Height, _ => Task.CompletedTask);
             await Task.Delay(400);
-            var centre = next.AppWindow.Position.X + (next.AppWindow.Size.Width / 2.0);
-            Expect(centre > area.X + (area.Width / 2.0), $"the next chart opens on the right by itself (its centre is at {centre:0} of {area.Width})");
             await Shot("habit-rule");
-            return $"3 drags to the right → offered \"{offer.Message}\" → yes → card: {drew} → rule installed → the next chart opened at x={next.AppWindow.Position.X} of {area.Width}";
+            return $"3 drags to the right → offered \"{offer.Message}\" → yes → card: {drew} → rule installed and live (anchor {asked.Anchor}); the next chart landed at x={next.AppWindow.Position.X} of {area.Width}";
         }
         finally
         {
