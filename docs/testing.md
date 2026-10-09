@@ -136,8 +136,9 @@ built for. Right-click the tray icon and choose **Check this device**; it
 measures what this build can measure and reports it with the target from the
 [stack decision](stack-decision.md). Then walk through this:
 
-1. **Install.** Trust the `.cer` once (Local Machine, Trusted People), then
-   open the `.msix`.
+1. **Install.** From the repository's Releases, **Latest CI build**: download the
+   `.msix` and the `.cer` for your machine, trust the `.cer` once (Local Machine,
+   Trusted People), then open the `.msix`.
 2. **Summon.** Press `Ctrl+Alt+Space` (or click the tray icon). The bar appears
    at once, centered, with the orb breathing. `Esc` closes it.
 3. **Open, offline.** Disconnect from the network. Type `open q3 budget` (any
