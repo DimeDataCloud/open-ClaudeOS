@@ -82,11 +82,14 @@ In order:
    in `ClaudeOS.Core/Planning` (they are plain constants with tests around them).
 3. **On-device routing.** Add the Windows ML classifier behind `IIntentClassifier`;
    the grammar already handles the common phrases.
-4. **More artifact types** (report, table, diagram) as new recipes, the same way
+4. **Habits.** `HabitTracker` (core, tested) notices where you keep putting things and
+   returns a suggestion; the shell does not show or accept one yet. Suggest-only, never
+   automatic: accepting should write a layout-rule mod through the usual approval.
+5. **More artifact types** (report, table, diagram) as new recipes, the same way
    charts work: Claude writes a compact spec, local code validates and renders it.
-5. **Scripted and web mods**, only with their sandboxes (Jint with time and memory
+6. **Scripted and web mods**, only with their sandboxes (Jint with time and memory
    limits; WebView2 with no network by default).
-6. **Linux shell** on the same core (Uno Platform is the likely route).
+7. **Linux shell** on the same core (Uno Platform is the likely route).
 
 ## Working on it
 
