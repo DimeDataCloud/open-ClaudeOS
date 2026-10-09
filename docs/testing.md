@@ -110,6 +110,21 @@ folder; it never touches your files or key. It checks that:
 - hold-to-approve: letting go early does not approve, a full hold does;
 - the key window and the **Check this device** report render and produce numbers.
 
+### What it measured (a GitHub-hosted Windows x64 VM, 2026-10-09)
+
+These are the first numbers from the running shell. They are from a shared VM with
+no GPU, **not from the Surface**, so read them as "not alarming" rather than as
+results.
+
+| | Measured | Target (on the device) |
+|---|---|---|
+| Hotkey to bar visible and focused | 24 to 40 ms | under 50 ms |
+| Memory when idle (resident, bar pre-created) | 105 MB | under 150 MB |
+| Reading all windows with true bounds | 0.2 ms | n/a |
+| Finding free space for a new window | 0.4 ms | under 20 ms |
+| Windows OCR | available | works |
+| UI frame rate during the orb animation | 54 to 63 fps | 120 on a 120 Hz screen: the VM has no GPU, so this one says nothing |
+
 What this does not prove: how it looks (it reads text back from the UI, not
 pixels), how it feels (a CI VM has no GPU, so frame rates there say nothing),
 ARM64 behaviour (the runner is x64), or touch. Those need the device.

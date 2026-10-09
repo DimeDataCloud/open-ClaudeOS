@@ -76,8 +76,10 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
     {
         bar.Summon();
         await Task.Delay(500);
-        var probe = bar.Probe("q3");
-        await Task.Delay(200);
+        bar.TypeForTest("q3");
+        await Task.Delay(500);
+        var probe = bar.Probe();
+        Expect(probe.Results >= 1, $"typing \"q3\" finds the file in Documents (results: {probe.Results}; the index holds {services.Files.Count} file(s))");
         Expect(probe.Visible, $"the bar is visible after being summoned (presence: {services.Bar.Presence.Frame.State}, summon took {probe.SummonMs:0} ms)");
         Expect(probe.Width > 300 && probe.Height > 40, $"the bar has a sensible size ({probe.Width}x{probe.Height})");
         bar.Dismiss();

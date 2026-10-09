@@ -19,7 +19,7 @@ concept.
 | **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 233 xUnit tests on Linux and Windows. Zero dependencies; Native AOT verified in CI |
 | Claude adapter | `windows/src/ClaudeOS.Claude` | The only reference to the official Anthropic SDK, behind `IModelClient`. Tested against a fake API; **never run against the live API** (no key in CI) |
 | CLI | `windows/src/ClaudeOS.Cli` | `do`, `apply`, `undo`, `log`, `chart`, `route`, `theme`, `demo-data`. Runs the whole core on any OS |
-| **Windows shell** | `windows/src/ClaudeOS.Shell` | WinUI 3 on Windows App SDK 2.5.1: Intent Bar, presence orb, subject-only chart windows, approval window with hold-to-approve, widget windows, key entry, tray, device check, a self-test. Compiles for x64 and ARM64 in CI and packages as a signed MSIX. **Not yet run on your Surface** |
+| **Windows shell** | `windows/src/ClaudeOS.Shell` | WinUI 3 on Windows App SDK 2.5.1: Intent Bar, presence orb, subject-only chart windows, approval window with hold-to-approve, widget windows, key entry, tray, device check, a self-test. Compiles for x64 and ARM64 in CI and packages as a signed MSIX. Compiles, installs and passes its own self-test on a Windows desktop in CI; **not yet run on your Surface** |
 | Design system | `design/` | `tokens.json` → CSS, XAML and C# (CI fails on drift); interactive prototype driven by real core output; the screenshots in `docs/images` |
 | Docs | `docs/`, `README.md` | [design](docs/design.md), [testing](docs/testing.md), architecture, challenges, threat model, stack decision (with an "as built" section), Windows plan (with milestone status), roadmap |
 | CI | `.github/workflows/` | `ci.yml` (Python, .NET on Linux and Windows, design sync, Native AOT guard), `shell.yml` (compile x64 and ARM64), `package.yml` (signed MSIX, a run-it self-test on a Windows desktop, an AOT probe of the shell) |
@@ -70,7 +70,9 @@ You asked for no questions, so these defaults were taken; each is easy to change
 In order:
 
 1. **M0 on the device.** The shell has been run only by its own self-test on a
-   GitHub Windows runner. Real-device issues will be about focus, DPI, shadow on
+   GitHub-hosted Windows x64 VM (all checks pass, including the planted-email plan
+   through the real approval window; see [docs/testing.md](docs/testing.md)).
+   Real-device issues will be about focus, DPI, shadow on
    frameless windows, Windows' acrylic, and the Copilot key. The checklist and the
    fallbacks are in [stack-decision.md](docs/stack-decision.md#what-would-change-this-decision).
 2. **Live Claude pass.** Run the walk-through with a real key; tune the system prompts
