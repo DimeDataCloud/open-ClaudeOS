@@ -5,3 +5,14 @@ __pycache__/
 .venv/
 build/
 dist/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.nupkg
+TestResults/
+artifacts/
+*.pfx
+*.snk

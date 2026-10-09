@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ClaudeOS.Core/ClaudeOS.Core.csproj" />
+    <Project Path="src/ClaudeOS.Claude/ClaudeOS.Claude.csproj" />
+    <Project Path="src/ClaudeOS.Cli/ClaudeOS.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ClaudeOS.Core.Tests/ClaudeOS.Core.Tests.csproj" />
+  </Folder>
+</Solution>
