@@ -398,7 +398,7 @@
   }
 
   /* ---------------------------------------------------------------- boot */
-  function fit() { const k = Math.min((innerWidth - 40) / 1440, 1.25); wrap.style.setProperty('--k', k); }
+  function fit() { const k = Math.min((innerWidth - 40) / 1440, (innerHeight - 150) / 960, 1.25); wrap.style.setProperty('--k', Math.max(k, 0.3)); }
   addEventListener('resize', fit); fit();
   hydrateOrbs(); mountControls(); hydrateOrbs(); buildDesktop(); applyTheme();
   new URLSearchParams(location.search).forEach((v, k) => { if (k === 'theme') { S.appearance = v; $$('#appearance button').forEach((b) => b.classList.toggle('on', b.dataset.v === v)); applyTheme(); } if (k === 'scenario') { S.scenario = v; buildDesktop(); } });
