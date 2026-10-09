@@ -104,7 +104,9 @@ In order:
    the shell wiring has not yet run on Windows). Still worth adding: rules for files opened
    from the bar.
 5. **More artifact types** (report, table, diagram) as new recipes, the same way
-   charts work: Claude writes a compact spec, local code validates and renders it.
+   charts work: Claude writes a compact spec, local code validates and renders it. Today these
+   requests go to the planner, which can write new files (a spreadsheet, a document) with no
+   card and an Undo; a recipe would add a window, a live preview and "Edit with Claude".
 6. **Web mods**, only with their sandbox (WebView2 with no network by default). Scripted
    mods exist now as formulas (see `examples/mods` and `claudeos mod`); a general scripting
    engine is not needed until a real mod outgrows them.

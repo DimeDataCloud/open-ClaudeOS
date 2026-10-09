@@ -75,7 +75,7 @@ opt-in usability study shows most prompts are for irreversible actions.
 - Local context service: hybrid search, encrypted, scoped per workspace
 - Event triggers (file changes, notifications, calendar) instead of polling
 - Quarantined reading of untrusted content (dual-LLM pattern)
-- Offline tiers with a local model for routing and simple intents
+- Offline tiers with a local model for routing and simple intents (the CPU classifier for routing is built and measured; a learned model for the NPU is not)
 
 **Exit test:** idle power overhead indistinguishable from the stock desktop,
 and the system stays usable with the network off.
