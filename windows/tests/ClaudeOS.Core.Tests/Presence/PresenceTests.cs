@@ -92,7 +92,7 @@ public sealed class PresenceTests
         Assert.Equal("Applying", p.Frame.Label);
         p.Handle(new Finished("Done", Undoable: true));
         Assert.Equal(PresenceState.Done, p.Frame.State);
-        Assert.Equal("Ctrl+Z to undo", p.Frame.Hint);
+        Assert.Equal("Say \"undo\" to take it back", p.Frame.Hint);
 
         clock.Now += TimeSpan.FromSeconds(1);
         p.Handle(new Tick(clock.Now));

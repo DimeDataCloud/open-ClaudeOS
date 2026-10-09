@@ -2,10 +2,21 @@
 <Window
     x:Class="ClaudeOS.Shell.Views.SubjectWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:ClaudeOS.Shell.Controls">
 
     <!-- The subject and nothing else: no title bar, no toolbar, no tags. -->
     <Grid x:Name="Root" Background="{ThemeResource CosSurfaceRaisedBrush}">
         <Image x:Name="Picture" Stretch="Uniform" />
+
+        <!-- Only while Claude is changing this window: the presence, and what it is doing. -->
+        <Border x:Name="Busy" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,14"
+                Padding="8,6,14,6" CornerRadius="{StaticResource CosRadiusPill}"
+                Background="{ThemeResource CosSurfaceGlassBrush}" BorderBrush="{ThemeResource CosLineHairlineBrush}" BorderThickness="1">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <controls:PresenceOrb x:Name="BusyOrb" Width="22" Height="22" VerticalAlignment="Center" />
+                <TextBlock x:Name="BusyLabel" Style="{StaticResource CosCaptionText}" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

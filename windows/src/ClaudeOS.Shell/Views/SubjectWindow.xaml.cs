@@ -1,4 +1,6 @@
 using ClaudeOS.Core.Layout;
+using ClaudeOS.Core.Presence;
+using ClaudeOS.Shell.Services;
 using ClaudeOS.Shell.Interop;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -19,16 +21,18 @@ namespace ClaudeOS.Shell.Views;
 /// tag. Drag anywhere to move it, drag the edges to resize, Esc closes it, and the only menu is the
 /// one on right-click (or press and hold). It still has a name for screen readers.
 /// </summary>
-internal sealed partial class SubjectWindow : Window
+internal sealed partial class SubjectWindow : Window, IChartWindow
 {
     private readonly nint _hwnd;
-    private readonly string _svg;
-    private readonly Func<SubjectWindow, Task>? _edit;
+    private string _svg;
+    private readonly Func<IChartWindow, Task>? _edit;
+    private readonly PresenceMachine _presence;
 
-    public SubjectWindow(string altText, string svg, Func<SubjectWindow, Task>? edit = null)
+    public SubjectWindow(string altText, string svg, PresenceMachine presence, Func<IChartWindow, Task>? edit = null)
     {
         _svg = svg;
         _edit = edit;
+        _presence = presence;
         InitializeComponent();
         _hwnd = WindowNative.GetWindowHandle(this);
 
@@ -44,6 +48,7 @@ internal sealed partial class SubjectWindow : Window
         var none = Native.DWMWA_COLOR_NONE;
         Native.DwmSetWindowAttribute(_hwnd, Native.DWMWA_BORDER_COLOR, ref none, sizeof(uint));
 
+        Closed += (_, _) => _presence.Changed -= OnPresence;
         Root.PointerPressed += OnPointerPressed;
         Root.RightTapped += OnRightTapped;
         Root.Holding += OnHolding;
@@ -60,6 +65,62 @@ internal sealed partial class SubjectWindow : Window
 
     public async Task ShowAsync(Rect physical)
     {
+        await LoadAsync();
+        AppWindow.MoveAndResize(new RectInt32(physical.X, physical.Y, physical.Width, physical.Height));
+        AppWindow.Show();
+        Activate();
+    }
+
+    /// <summary>Swap in a revised picture (after "Edit with Claude") without moving the window.</summary>
+    public async Task UpdateAsync(string altText, string svg)
+    {
+        _svg = svg;
+        AppWindow.Title = altText;
+        AutomationProperties_SetName(Picture, altText);
+        await LoadAsync();
+    }
+
+    /// <summary>One line of text from the person, in a small sheet over the window. Null if cancelled.</summary>
+    public async Task<string?> AskAsync(string title, string placeholder)
+    {
+        var box = new TextBox { PlaceholderText = placeholder, AcceptsReturn = false, MinWidth = 320 };
+        var dialog = new ContentDialog
+        {
+            Title = title,
+            Content = box,
+            PrimaryButtonText = "Change it",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Root.XamlRoot,
+        };
+        var result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary && box.Text.Trim().Length > 0 ? box.Text.Trim() : null;
+    }
+
+    /// <summary>While Claude changes this window, the presence shows on it and says what is happening.</summary>
+    public void SetBusy(bool busy)
+    {
+        if (busy)
+        {
+            _presence.Changed += OnPresence;
+            OnPresence(_presence.Frame);
+        }
+        else
+        {
+            _presence.Changed -= OnPresence;
+            Busy.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void OnPresence(PresenceFrame frame) => DispatcherQueue.TryEnqueue(() =>
+    {
+        Busy.Visibility = Visibility.Visible;
+        BusyOrb.Apply(frame, _presence.ReducedMotion);
+        BusyLabel.Text = frame.Label;
+    });
+
+    private async Task LoadAsync()
+    {
         var source = new SvgImageSource();
         using var stream = new InMemoryRandomAccessStream();
         using (var writer = new DataWriter(stream))
@@ -72,9 +133,6 @@ internal sealed partial class SubjectWindow : Window
         stream.Seek(0);
         await source.SetSourceAsync(stream);
         Picture.Source = source;
-        AppWindow.MoveAndResize(new RectInt32(physical.X, physical.Y, physical.Width, physical.Height));
-        AppWindow.Show();
-        Activate();
     }
 
     private void OnPointerPressed(object sender, PointerRoutedEventArgs e)

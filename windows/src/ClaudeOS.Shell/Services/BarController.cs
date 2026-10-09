@@ -17,13 +17,16 @@ internal sealed record BarResult(ResultKind Kind, string Title, string Subtitle,
 /// Enter does. Opening, finding, moving windows and undo are decided and done here, locally and
 /// instantly, with no model. Anything that needs Claude is handed to the agent service.
 /// </summary>
-internal sealed class BarController(PresenceMachine presence, FileIndex files, StateDir state)
+internal sealed class BarController(PresenceMachine presence, FileIndex files, StateDir state, Placer placer)
 {
     private readonly IntentRouter _router = new();
-    private readonly LayoutHistory _history = new();
+    private LayoutHistory History => placer.History;
     private nint _previousForeground;
 
     public PresenceMachine Presence => presence;
+
+    /// <summary>Claude. Set once the UI exists; everything that reaches it has already missed the local routes.</summary>
+    public AgentService? Agent { get; set; }
 
     /// <summary>The window that had focus before the bar appeared: what "snap left" and "close this" mean.</summary>
     public void RememberForeground(nint hwnd) => _previousForeground = hwnd;
@@ -88,7 +91,12 @@ internal sealed class BarController(PresenceMachine presence, FileIndex files, S
 
             default:
                 presence.Handle(new Routed(routing));
-                return null;
+                if (Agent is null)
+                {
+                    return null;
+                }
+
+                return await Agent.RunAsync(routing.Intent, text);
         }
     }
 
@@ -128,7 +136,7 @@ internal sealed class BarController(PresenceMachine presence, FileIndex files, S
                 }
 
                 WindowCatalog.Move(fresh.Handle, placement.Bounds);
-                _history.Record(placement with { Moves = [.. placement.Moves, new WindowMove(fresh.Handle, fresh.Bounds, placement.Bounds)] });
+                History.Record(placement with { Moves = [.. placement.Moves, new WindowMove(fresh.Handle, fresh.Bounds, placement.Bounds)] });
                 state.Log("placed", Audit.Of(("title", Audit.Str(fresh.Title)), ("method", Audit.Str(placement.Method.ToString()))));
             }
 
@@ -143,7 +151,7 @@ internal sealed class BarController(PresenceMachine presence, FileIndex files, S
         var desktop = WindowCatalog.Capture();
         if (command == WindowCommand.PutBack)
         {
-            var restore = _history.PutBack(desktop.Windows);
+            var restore = History.PutBack(desktop.Windows);
             if (restore is null)
             {
                 return "Nothing to put back";
@@ -179,7 +187,7 @@ internal sealed class BarController(PresenceMachine presence, FileIndex files, S
         if (destination is { } to)
         {
             WindowCatalog.Move(target, to);
-            _history.Record(new Placement(to, PlacementMethod.MadeRoom, monitor.Id, [new WindowMove(target, window.Bounds, to)], command.ToString()));
+            History.Record(new Placement(to, PlacementMethod.MadeRoom, monitor.Id, [new WindowMove(target, window.Bounds, to)], command.ToString()));
             return "Done";
         }
 

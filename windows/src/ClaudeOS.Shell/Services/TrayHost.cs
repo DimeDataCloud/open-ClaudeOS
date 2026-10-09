@@ -17,7 +17,7 @@ internal sealed unsafe class TrayHost : IDisposable
     private const uint NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4;
     private const uint MF_STRING = 0, MF_SEPARATOR = 0x800;
     private const uint TPM_RIGHTBUTTON = 2, TPM_RETURNCMD = 0x100, TPM_BOTTOMALIGN = 0x20;
-    private const int CommandOpen = 1, CommandDiagnostics = 2, CommandQuit = 3;
+    private const int CommandOpen = 1, CommandDiagnostics = 2, CommandQuit = 3, CommandConnect = 4;
 
     private static TrayHost? s_instance;
     private static uint s_taskbarCreated;
@@ -28,6 +28,8 @@ internal sealed unsafe class TrayHost : IDisposable
     public event Action? SummonRequested;
 
     public event Action? DiagnosticsRequested;
+
+    public event Action? ConnectRequested;
 
     public event Action? QuitRequested;
 
@@ -105,6 +107,7 @@ internal sealed unsafe class TrayHost : IDisposable
         Native.GetCursorPos(out var at);
         var menu = Native.CreatePopupMenu();
         Native.AppendMenu(menu, MF_STRING, CommandOpen, $"Open the bar\t{HotkeyDescription}");
+        Native.AppendMenu(menu, MF_STRING, CommandConnect, "Claude key…");
         Native.AppendMenu(menu, MF_STRING, CommandDiagnostics, "Check this device");
         Native.AppendMenu(menu, MF_SEPARATOR, 0, null);
         Native.AppendMenu(menu, MF_STRING, CommandQuit, "Quit");
@@ -115,6 +118,7 @@ internal sealed unsafe class TrayHost : IDisposable
         {
             case CommandOpen: SummonRequested?.Invoke(); break;
             case CommandDiagnostics: DiagnosticsRequested?.Invoke(); break;
+            case CommandConnect: ConnectRequested?.Invoke(); break;
             case CommandQuit: QuitRequested?.Invoke(); break;
         }
     }

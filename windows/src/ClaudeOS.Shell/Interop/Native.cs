@@ -35,6 +35,17 @@ internal static unsafe partial class Native
     public struct POINT { public int X, Y; }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FILETIME { public uint Low, High; public readonly ulong Value => ((ulong)High << 32) | Low; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MEMORYSTATUSEX
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys, ullAvailPhys, ullTotalPageFile, ullAvailPageFile, ullTotalVirtual, ullAvailVirtual, ullAvailExtendedVirtual;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct MONITORINFO { public uint cbSize; public RECT rcMonitor; public RECT rcWork; public uint dwFlags; }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -217,4 +228,12 @@ internal static unsafe partial class Native
 
     [LibraryImport("kernel32.dll")]
     public static partial uint GetCurrentProcessId();
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetSystemTimes(out FILETIME idle, out FILETIME kernel, out FILETIME user);
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX status);
 }
