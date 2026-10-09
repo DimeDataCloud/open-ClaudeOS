@@ -1,7 +1,9 @@
 # Roadmap
 
 Build the new part first: the intent, plan and consent loop. Hardware, kernel
-and distribution work comes last, because stock Linux already does that well.
+and driver work is left to the existing OS, because it already does that well.
+The first build you can install runs on Windows 11 ARM64 (tested on a Surface
+Pro); Linux follows with the same core.
 Each phase has an exit test; a phase is done when its test passes, not when its
 list is ticked. [challenges.md](challenges.md) explains the reasoning behind
 each item.
@@ -26,6 +28,15 @@ each item.
 **Exit test:** a newcomer can clone, run the demo and open a pull request
 using only the repository docs, and security reports have a private channel.
 
+## Build 1: Windows on ARM test build (next)
+
+An app layer on Windows 11 ARM64: Intent Bar, instant file opening placed in
+free screen space, subject-only windows for generated charts, reports,
+diagrams and images, mods, and the Phase 0 safety core. Full plan, stack
+choice and milestones (M0 to M4): [windows-arm64-plan.md](windows-arm64-plan.md).
+
+**Exit test:** the Surface test checklist in that plan passes.
+
 ## Phase 1: real effects, still in the terminal
 
 - Command execution in a bubblewrap sandbox (no network, writable overlay),
@@ -43,6 +54,9 @@ effect), every local effect can be undone, and a task stops cleanly when it
 hits any budget.
 
 ## Phase 2: the desktop shell
+
+Build 1 delivers a first Windows version of the shell. This phase finishes it
+and brings it to Linux.
 
 - Intent Bar as a Wayland layer-shell overlay: local matching first,
   streaming plan progress
