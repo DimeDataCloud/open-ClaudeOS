@@ -70,6 +70,9 @@ internal sealed partial class WidgetWindow : Window
         _timer.Start();
     }
 
+    /// <summary>The text currently drawn in the widget (the self-test checks it is live).</summary>
+    public string Text => Controls.TreeText.Of(Host.Content as DependencyObject);
+
     private void Refresh()
     {
         try

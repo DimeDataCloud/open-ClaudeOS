@@ -19,7 +19,7 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
-        UnhandledException += (_, e) => Services?.State.Log("crash", Audit.Of(("message", Audit.Str(e.Message))));
+        UnhandledException += (_, e) => Services?.State.Log("crash", Audit.Of(("message", Audit.Str(e.Exception?.ToString() ?? e.Message))));
     }
 
     public static new App? Current => Application.Current as App;
@@ -44,6 +44,10 @@ public partial class App : Application
             () => RequestedTheme == ApplicationTheme.Dark ? Appearance.Dark : Appearance.Light);
         Services.Bar.Agent.RestoreWidgets();
 
+        // A developer/CI switch: if the package's private folder holds selftest.flag, run the shell
+        // against itself, write the result next to it, and quit. See docs/testing.md.
+        var selfTest = SelfTest.FlagPath();
+
         _tray = new TrayHost();
         _tray.SummonRequested += () => _dispatcher.TryEnqueue(Summon);
         _tray.QuitRequested += () => _dispatcher.TryEnqueue(Exit);
@@ -52,6 +56,11 @@ public partial class App : Application
         _tray.Start(TryReadAsset("Square44x44Logo.targetsize-24_altform-unplated.png"));
         Services.Bar.Presence.Changed += frame => _tray.SetStatus(frame.Label.Length > 0 ? $"open-ClaudeOS: {frame.Label}" : "open-ClaudeOS");
         Services.Files.RefreshIfStale(TimeSpan.Zero);
+
+        if (selfTest is not null)
+        {
+            _dispatcher.TryEnqueue(async () => await new SelfTest(this, Services, _bar, ui).RunAsync(selfTest));
+        }
     }
 
     internal void OnSecondLaunch() => _dispatcher?.TryEnqueue(Summon);
