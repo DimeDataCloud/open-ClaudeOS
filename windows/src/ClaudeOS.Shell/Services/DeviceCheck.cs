@@ -47,7 +47,7 @@ internal static class DeviceCheck
         readings.Add(new("Files indexed", filesIndexed.ToString(System.Globalization.CultureInfo.InvariantCulture)));
 
         readings.Add(new("Windows OCR", OcrAvailable(), null));
-        readings.Add(new("Intent model on the NPU", "not wired in yet; the local grammar answers common requests"));
+        readings.Add(new("Intent model on the NPU", "not wired in yet; the grammar router is used"));
         readings.Add(new("Agent Launcher registration", "not wired in yet"));
         readings.Add(new("Native AOT publish", "checked in CI, not by this app"));
         return readings;

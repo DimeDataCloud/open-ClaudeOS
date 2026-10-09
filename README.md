@@ -49,6 +49,20 @@ sheet costs about what a 5-row one does).
 | ![Made room](docs/images/made-room-dark.png) | **Windows find room.** New content goes where there is free space. When there isn't, the fewest windows move, by the smallest amount, and "put it back" restores the screen exactly. This is geometry, not AI. |
 | ![A widget](docs/images/widget-approval-light.png) | **Yours to change.** Widgets, themes and commands are small files you own (mods). Each says in plain words what it can read, you approve those words, and every read is checked against them. Claude can write one from a sentence; you still approve it. |
 
+### The running shell
+
+These are pictures of the Windows app, taken by its own self-test in CI on a
+GitHub-hosted Windows Server 2025 VM (no GPU; Server draws square window corners
+where Windows 11 rounds them, and the accent is the default). They show what the
+code does, not the final polish; the prototype above is the intended look.
+
+| | |
+|---|---|
+| ![The approval card in the running shell](docs/images/shell-approval.png) | ![A chart in its own window](docs/images/shell-chart.png) |
+| A plan with an email planted by an invoice, on the real approval window: both recipients, flagged, with the full text that would be sent. Sending takes a hold. | A chart made from a sentence, drawn with native shapes and text, in a window with no chrome. |
+
+![The Intent Bar](docs/images/shell-bar.png)
+
 The design principles, the Spark (Claude's presence) and its states, the tokens
 and the accessibility rules are in [docs/design.md](docs/design.md).
 

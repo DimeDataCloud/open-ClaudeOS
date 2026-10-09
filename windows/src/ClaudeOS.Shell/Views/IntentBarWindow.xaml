@@ -63,6 +63,14 @@
                   SelectionMode="Single"
                   IsItemClickEnabled="True"
                   Padding="8,0,8,10">
+            <!-- The selection wears our accent, not the system blue. -->
+            <ListView.Resources>
+                <SolidColorBrush x:Key="ListViewItemSelectionIndicatorBrush" Color="{ThemeResource CosAccentMarkColor}" />
+                <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="{ThemeResource CosAccentSoftColor}" />
+                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="{ThemeResource CosAccentSoftColor}" />
+                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="{ThemeResource CosAccentSoftColor}" />
+                <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="{ThemeResource CosSurfaceSunkenColor}" />
+            </ListView.Resources>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="services:BarResult">
                     <Grid Height="48" ColumnSpacing="14" Padding="10,0">
