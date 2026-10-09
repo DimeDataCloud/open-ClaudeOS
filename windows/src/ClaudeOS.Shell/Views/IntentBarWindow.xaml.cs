@@ -118,12 +118,12 @@ internal sealed partial class IntentBarWindow : Window
         _bar.Presence.Handle(new BarHidden());
     }
 
-    private void Position(int rows, bool statusVisible)
+    private void Position(int rows, bool statusVisible, int extraStatusLines = 0)
     {
         var desktop = WindowCatalog.Capture(_hwnd);
         var monitor = desktop.FocusMonitor;
         var scale = monitor.Scale;
-        var height = InputDips + (statusVisible ? 48 : 0) + (rows > 0 ? (rows * RowDips) + 14 : 0);
+        var height = InputDips + (statusVisible ? 48 + (extraStatusLines * 20) : 0) + (rows > 0 ? (rows * RowDips) + 14 : 0);
         var width = (int)Math.Round(WidthDips * scale);
         var h = (int)Math.Round(height * scale);
         var x = monitor.WorkArea.X + ((monitor.WorkArea.Width - width) / 2);
@@ -207,6 +207,16 @@ internal sealed partial class IntentBarWindow : Window
         }
 
         var message = await _bar.SubmitAsync(text, Results.SelectedItem as BarResult);
+        if (message is { Length: > 48 })
+        {
+            // An answer, not an acknowledgement (Claude asked a question, or explained a refusal):
+            // leave it up until the person is done reading it.
+            Status.Text = message;
+            StatusRow.Visibility = Visibility.Visible;
+            Position(_results.Count, statusVisible: true, extraStatusLines: Math.Min(4, message.Length / 70));
+            return;
+        }
+
         if (message is not null || _bar.Presence.Frame.State is PresenceState.Done or PresenceState.Understanding)
         {
             // Let the tick settle for a moment, then get out of the way.

@@ -52,7 +52,7 @@
         <!-- What Claude is really doing, in words. -->
         <Grid x:Name="StatusRow" Grid.Row="1" Visibility="Collapsed" Padding="70,0,20,12">
             <StackPanel Spacing="2">
-                <TextBlock x:Name="Status" Style="{StaticResource CosBodyText}" />
+                <TextBlock x:Name="Status" Style="{StaticResource CosBodyText}" TextWrapping="Wrap" MaxLines="5" TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True" />
                 <TextBlock x:Name="StatusHint" Style="{StaticResource CosCaptionText}" />
             </StackPanel>
         </Grid>

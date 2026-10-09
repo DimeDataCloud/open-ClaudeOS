@@ -1,20 +1,19 @@
 using System.Collections.Immutable;
 using ClaudeOS.Core.Actions;
 using ClaudeOS.Core.Mods;
-using ClaudeOS.Core.Safety;
 
-namespace ClaudeOS.Shell.Services;
+namespace ClaudeOS.Core.Safety;
 
 /// <summary>One line of the approval card: what will happen, in the system's words.</summary>
-internal sealed record ApprovalRow(string Badge, bool External, string Text, ImmutableArray<string> Notes, string? Denied, ImmutableArray<string> Quoted);
+public sealed record ApprovalRow(string Badge, bool External, string Text, ImmutableArray<string> Notes, string? Denied, ImmutableArray<string> Quoted);
 
 /// <summary>
-/// What the approval window shows, with no UI types in it. It is built from the core's
+/// What an approval surface shows (the Windows shell's window, or any other front end), with no UI types in it. It is built from the core's
 /// <see cref="ApprovalCard"/> (typed actions, policy notes, the staged diff) or from a mod proposal,
 /// never from the model's own description of what it will do. That description is shown, but only
 /// as a labelled claim.
 /// </summary>
-internal sealed record ApprovalModel(
+public sealed record ApprovalModel(
     string Title,
     string? ModelClaim,
     ImmutableArray<ApprovalRow> Rows,

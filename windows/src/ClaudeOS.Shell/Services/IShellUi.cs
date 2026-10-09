@@ -1,5 +1,6 @@
 using ClaudeOS.Core.Layout;
 using ClaudeOS.Core.Mods;
+using ClaudeOS.Core.Safety;
 
 namespace ClaudeOS.Shell.Services;
 
