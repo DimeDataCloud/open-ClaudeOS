@@ -246,7 +246,7 @@ details.diff { margin: 10px 0; } details.diff summary { cursor: pointer; font-si
 .seg button.on { background: rgba(255,255,255,.12); color: #fff; }
 .swatches { display: flex; gap: 8px; } .sw { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; background: var(--c); }
 .sw.on { border-color: #fff; box-shadow: 0 0 0 2px #14130f inset; }
-.states { display: flex; gap: 26px; flex-wrap: wrap; } .stt { display: grid; gap: 6px; justify-items: center; font-size: 12px; color: #bdb9b1; }
+.states { display: flex; gap: 26px; flex-wrap: wrap; padding: 10px 24px; } .stt { display: grid; gap: 6px; justify-items: center; font-size: 12px; color: #bdb9b1; }
 .stt .orb { --s: 44px; }
 .stt .orb[data-state] { color-scheme: dark; }
 .note { color: #8d897f; font-size: 12px; max-width: 900px; line-height: 18px; }

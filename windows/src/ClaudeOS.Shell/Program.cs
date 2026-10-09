@@ -25,10 +25,10 @@ public static class Program
 
         main.Activated += (_, _) => App.Current?.OnSecondLaunch();
 
-        Application.Start(_ =>
+        Application.Start(callback =>
         {
             SynchronizationContext.SetSynchronizationContext(new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread()));
-            _ = new App();
+            new App();
         });
         return 0;
     }

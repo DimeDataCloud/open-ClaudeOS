@@ -68,6 +68,7 @@ internal static class DemoData
             w.WriteNumber("height", size.Height);
             w.WriteString("alt", ChartRenderer.Render(data, new ChartStyle(ThemeResolver.Resolve(Appearance.Light), size.Width, size.Height)).AltText);
             w.WriteNumber("sourceRows", data.SourceRows);
+            w.WriteNumber("series", data.Series.Length);
             foreach (var appearance in new[] { Appearance.Light, Appearance.Dark })
             {
                 var theme = ThemeResolver.Resolve(appearance);
