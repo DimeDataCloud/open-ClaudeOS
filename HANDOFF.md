@@ -16,7 +16,7 @@ concept.
 | Item | Where | State |
 |---|---|---|
 | Python reference (Phase 0) | `src/claudeos/`, `tests/` | 23 tests. The executable spec the C# core was ported from; plans have byte-identical digests in both |
-| **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 296 xUnit tests (all pass on Linux; the first 248 also passed on Windows in CI, the rest are waiting on Actions billing). Zero dependencies; Native AOT verified in CI |
+| **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 376 xUnit tests (all pass on Linux; the first 248 also passed on Windows in CI, the rest are waiting on Actions billing). Zero dependencies; Native AOT verified in CI |
 | Claude adapter | `windows/src/ClaudeOS.Claude` | The only reference to the official Anthropic SDK, behind `IModelClient`. Tested against a fake API; **never run against the live API** (no key in CI) |
 | CLI | `windows/src/ClaudeOS.Cli` | `do`, `apply`, `undo`, `log`, `chart`, `route`, `theme`, `demo-data`. Runs the whole core on any OS |
 | **Windows shell** | `windows/src/ClaudeOS.Shell` | WinUI 3 on Windows App SDK 2.5.1: Intent Bar, presence orb, subject-only chart windows, approval window with hold-to-approve, widget windows, key entry, tray, device check, a self-test. Compiles for x64 and ARM64 in CI and packages as a signed MSIX. Compiles, installs and passes its own self-test on a Windows desktop in CI; **not yet run on your Surface** |
@@ -101,8 +101,9 @@ In order:
    remembered, and rules for files opened from the bar.
 5. **More artifact types** (report, table, diagram) as new recipes, the same way
    charts work: Claude writes a compact spec, local code validates and renders it.
-6. **Scripted and web mods**, only with their sandboxes (Jint with time and memory
-   limits; WebView2 with no network by default).
+6. **Web mods**, only with their sandbox (WebView2 with no network by default). Scripted
+   mods exist now as formulas (see `examples/mods` and `claudeos mod`); a general scripting
+   engine is not needed until a real mod outgrows them.
 7. **Linux shell** on the same core (Uno Platform is the likely route).
 
 ## Working on it

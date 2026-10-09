@@ -34,9 +34,9 @@ public sealed class ArtifactMaker(IModelClient client, ModelSettings? settings =
         """;
 
     public const string ModPrompt = """
-        You write a mod: a small folder the person owns, described by one mod.json. You are making a declarative widget: pure JSON, no code.
+        You write a mod: a small folder the person owns, described by one mod.json. You are making a widget. Prefer level "declarative" (pure JSON, nothing to calculate). Use level "scripted" only when the view needs a calculation or a condition (rounding, a threshold, a note that depends on a reading).
 
-        mod.json fields: id (lowercase-words-with-hyphens), name, version, kind ("widget"), level ("declarative"), placement {anchor: top-left|top-right|bottom-left|bottom-right, size: [width, height] between 80x40 and 1200x1200}, capabilities (a list), view, settings (optional).
+        mod.json fields: id (lowercase-words-with-hyphens), name, version, kind ("widget"), level ("declarative" or "scripted"), placement {anchor: top-left|top-right|bottom-left|bottom-right, size: [width, height] between 80x40 and 1200x1200}, capabilities (a list), view, settings (optional).
         view is a tree. Each element has exactly one of: stack [elements], row [elements], metric "text" (with label), text "text" (with subtext), gauge "{value}" (with label, max), spark "{path}" (with label), list "{path}" (with template, limit), button "label" (with action), spacer true.
         Text may contain {path} placeholders. Paths come from capabilities:
           system.time -> system.time.hour, system.time.time, system.time.date
@@ -45,6 +45,7 @@ public sealed class ArtifactMaker(IModelClient client, ModelSettings? settings =
           calendar.read.next -> calendar.next.title, calendar.next.startsIn
           files.recent -> files.recent.first, files.recent.count
           windows.list -> windows.count
+        The scripted level adds "defs" (named formulas) and lets a {placeholder} hold a formula instead of a bare path. A formula is one expression, never a program: numbers, "text" or 'text', true and false, + - * / %, < <= > >= == !=, && || !, parentheses, names, and only these functions: abs, ceil, clamp, coalesce, contains, endsWith, floor, if, left, len, lower, max, min, number, pad, right, round, startsWith, text, trim, upper. A name with a dot is a path (system.battery.percent, settings.threshold); a name without one is another def. There are no loops, assignments or other calls, and a reading that is not available shows as a dash and flows through the calculation, so guard it only with coalesce when a fallback matters. Example: "defs": {"low": "system.battery.percent < settings.threshold"} and a view text "{if(low, \"Plug in soon\", \"Plenty left\")}". The person sees every formula on the approval card.
         Declare only the capabilities the view actually reads: the person approves each one in plain words, and a mod that asks for more than it needs is refused. Settings (color, boolean, number, text, choice) are read with {settings.key}.
         Call create_mod with the manifest. If it returns an error, fix the manifest and call it again.
         """;

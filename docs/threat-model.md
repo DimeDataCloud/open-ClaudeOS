@@ -22,7 +22,7 @@ about it.
 | **Approval fatigue** | Frequent prompts teach people to approve without reading. |
 | **Time-of-check / time-of-use** | A file changes, or a symlink is swapped in, between preview and commit. |
 
-## Mitigations in Phase 0
+## Mitigations
 
 | Mitigation | Where | Addresses |
 |---|---|---|
@@ -38,6 +38,9 @@ about it.
 | Append-only audit log | `state.StateDir.log` | After-the-fact review |
 | One approval per plan, not per action | `session.review_and_apply` | Approval fatigue |
 | Planner told file content is data | `planner.SYSTEM_PROMPT` | Injection (defence in depth only) |
+| Mods declare capabilities, approved in plain words and bound to a digest of the whole manifest; every read is checked again on every draw | `Mods/CapabilityBroker`, `Mods/ModStore` | Over-broad or edited mods |
+| Scripted mods are formulas, not programs: no loops, no assignment, no calls out, a hard step budget, length and depth limits; the approval card shows each formula in full | `Mods/Formula`, `Mods/Script` | Malicious or runaway mod logic (there is nothing to escape into) |
+| Injection corpus (23 hostile plans) and a seeded 20,000-path fuzz of the path policy run on every build | `Safety/InjectionCorpusTests`, `Safety/PathFuzzTests` | Regressions in the trusted core |
 
 ## Known gaps
 

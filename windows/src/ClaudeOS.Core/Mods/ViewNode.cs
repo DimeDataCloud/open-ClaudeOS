@@ -96,6 +96,26 @@ public sealed record ViewNode(
         }
     }
 
+    /// <summary>Every piece of text in the view, so placeholders can be found wherever they are.</summary>
+    internal IEnumerable<string> Texts()
+    {
+        foreach (var text in new[] { Primary, Secondary, Value, Max })
+        {
+            if (!string.IsNullOrEmpty(text))
+            {
+                yield return text;
+            }
+        }
+
+        foreach (var c in Children)
+        {
+            foreach (var t in c.Texts())
+            {
+                yield return t;
+            }
+        }
+    }
+
     /// <summary>Every <c>{path}</c> the view reads, so the approval card can show what data it touches.</summary>
     public IEnumerable<string> Paths()
     {
@@ -119,6 +139,57 @@ public sealed record ViewNode(
 
 internal static class Placeholders
 {
+    /// <summary>
+    /// The text between each pair of braces, in order. A formula may contain braces inside a quoted
+    /// string, so when <paramref name="quoteAware"/> is set a closing brace inside quotes does not end it.
+    /// </summary>
+    public static IEnumerable<(int Start, int End, string Body)> Spans(string text, bool quoteAware)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] != '{')
+            {
+                continue;
+            }
+
+            var j = i + 1;
+            var quote = '\0';
+            while (j < text.Length)
+            {
+                var c = text[j];
+                if (quote != '\0')
+                {
+                    if (c == '\\')
+                    {
+                        j++;
+                    }
+                    else if (c == quote)
+                    {
+                        quote = '\0';
+                    }
+                }
+                else if (quoteAware && c is '"' or '\'')
+                {
+                    quote = c;
+                }
+                else if (c == '}')
+                {
+                    break;
+                }
+
+                j++;
+            }
+
+            if (j >= text.Length)
+            {
+                yield break;
+            }
+
+            yield return (i, j, text[(i + 1)..j].Trim());
+            i = j;
+        }
+    }
+
     public static IEnumerable<string> Find(string? text)
     {
         if (text is null)

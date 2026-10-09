@@ -3,6 +3,7 @@ using ClaudeOS.Core.Actions;
 using ClaudeOS.Core.Artifacts;
 using ClaudeOS.Core.Design;
 using ClaudeOS.Core.Intent;
+using ClaudeOS.Core.Mods;
 using ClaudeOS.Core.Safety;
 
 namespace ClaudeOS.Cli;
@@ -22,6 +23,7 @@ public static class Cli
           claudeos chart <spec.json> [--data FILE] [--theme light|dark] [--out FILE]   run a chart recipe and draw it
           claudeos route "<text>"                                               how a request would be routed
           claudeos theme [--accent #HEX] [--appearance light|dark]              resolve and check a theme
+          claudeos mod <mod.json> [--set path=value] [--setting key=value]      review a mod: the card, its formulas, a preview
 
         Options for do / apply:
           --root DIR            the workspace the plan may touch (default: .)
@@ -51,11 +53,12 @@ public static class Cli
                 "chart" => Chart(opts),
                 "route" => await RouteAsync(opts),
                 "theme" => Theme(opts),
+                "mod" => ReviewMod(opts),
                 "demo-data" => DemoData.Run(opts),
                 _ => Fail($"unknown command '{opts.Command}'. Try: claudeos help"),
             };
         }
-        catch (Exception e) when (e is ActionException or GrantException or ConflictException or CommitException or SpecException or IOException or FormatException)
+        catch (Exception e) when (e is ActionException or GrantException or ConflictException or CommitException or SpecException or ModException or IOException or FormatException)
         {
             return Fail(e.Message);
         }
@@ -206,6 +209,82 @@ public static class Cli
         Console.WriteLine($"{routing.Intent.GetType().Name} via {routing.Source} in {routing.Elapsed.TotalMilliseconds:0.00} ms");
         Console.WriteLine(routing.Intent);
         return 0;
+    }
+
+    /// <summary>What a person would see before installing a mod, with sample readings you can change.</summary>
+    private static int ReviewMod(Options opts)
+    {
+        var file = opts.Positional.FirstOrDefault() ?? throw new FormatException("usage: claudeos mod <mod.json>");
+        var readings = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["system.battery.percent"] = "82", ["system.battery.charging"] = "false",
+            ["system.performance.cpu"] = "23", ["system.performance.memory"] = "61",
+            ["calendar.next.title"] = "Design review", ["calendar.next.startsIn"] = "in 25 min",
+            ["files.recent.first"] = "Q3 budget.xlsx", ["files.recent.count"] = "12", ["windows.count"] = "7",
+        };
+        foreach (var pair in opts.All("set"))
+        {
+            var kv = pair.Split('=', 2);
+            readings[kv[0]] = kv.Length > 1 ? kv[1] : "";
+        }
+
+        var settings = opts.All("setting").Select(p => p.Split('=', 2)).Where(kv => kv.Length == 2).ToDictionary(kv => kv[0], kv => kv[1], StringComparer.Ordinal);
+        var providers = new List<IDataProvider> { new ClockProvider() };
+        providers.AddRange(Capabilities.Known.Values.Where(c => c.DataPrefix != "system.time").Select(c => new SampleReadings(c.DataPrefix, readings)));
+        var binder = new ViewBinder(new CapabilityBroker(), providers);
+
+        var store = new ModStore(Path.Combine(Path.GetTempPath(), "claudeos-mod-review"), new CapabilityBroker());
+        var proposal = store.Review(File.ReadAllText(file), binder);
+        var card = ApprovalModel.FromMod(proposal);
+
+        Console.WriteLine($"{card.Title}   ({proposal.Manifest.Kind.ToString().ToLowerInvariant()}, {proposal.Manifest.Level.ToString().ToLowerInvariant()})");
+        foreach (var row in card.Rows)
+        {
+            Console.WriteLine($"  {row.Badge,-14} {row.Text}");
+            foreach (var note in row.Notes)
+            {
+                Console.WriteLine($"                 {note}");
+            }
+        }
+
+        Console.WriteLine($"  {(card.HoldToApprove ? "(hold to approve)" : "(one click to approve)")}   {card.RiskLine}");
+        if (proposal.DataPaths.Length > 0)
+        {
+            Console.WriteLine($"  reads: {string.Join(", ", proposal.DataPaths)}");
+        }
+
+        if (proposal.Manifest.View is not null)
+        {
+            Console.WriteLine("  preview:");
+            var preview = new ViewBinder(GrantAll(proposal.Manifest), providers).Bind(proposal.Manifest, settings);
+            PrintNode(preview, 2);
+        }
+
+        return 0;
+    }
+
+    private static CapabilityBroker GrantAll(ModManifest manifest)
+    {
+        var broker = new CapabilityBroker();
+        broker.Grant(manifest.Id, manifest.Capabilities);
+        return broker;
+    }
+
+    private static void PrintNode(RenderedNode node, int depth)
+    {
+        var text = string.Join("  |  ", new[] { node.Primary, node.Secondary }.Where(t => t.Length > 0));
+        Console.WriteLine($"{new string(' ', depth * 2)}{node.Kind.ToString().ToLowerInvariant()}{(text.Length > 0 ? ": " + text : "")}");
+        foreach (var child in node.Children)
+        {
+            PrintNode(child, depth + 1);
+        }
+    }
+
+    private sealed class SampleReadings(string prefix, Dictionary<string, string> readings) : IDataProvider
+    {
+        public string Prefix => prefix;
+
+        public bool TryGet(string path, out string value) => readings.TryGetValue(path, out value!) && value.Length > 0;
     }
 
     private static int Theme(Options opts)

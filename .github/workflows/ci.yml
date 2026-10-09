@@ -88,3 +88,5 @@ jobs:
           "$RUNNER_TEMP/aot/claudeos" apply examples/invoices-demo.plan.json --root "$RUNNER_TEMP/demo" --yes | tee apply.txt
           grep -q "Applied" apply.txt
           "$RUNNER_TEMP/aot/claudeos" undo | grep -q "Undid"
+          "$RUNNER_TEMP/aot/claudeos" mod examples/mods/battery-nudge/mod.json --set system.battery.percent=9 | tee mod.txt
+          grep -q "Plug in soon" mod.txt

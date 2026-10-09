@@ -80,6 +80,19 @@ public sealed record ApprovalModel(
             rows = [new ApprovalRow("Can read", false, "Nothing. It only shows what it was given.", [], null, [])];
         }
 
+        if (!proposal.Formulas.IsEmpty)
+        {
+            // The formulas are shown in full: they are the only "code" a scripted mod has, and they can
+            // only calculate from the data listed above.
+            rows = rows.Add(new ApprovalRow(
+                "Calculates",
+                false,
+                proposal.Formulas.Length == 1 ? "One small formula" : $"{proposal.Formulas.Length} small formulas",
+                proposal.Formulas,
+                null,
+                []));
+        }
+
         var risk = proposal.Capabilities.Length == 0 ? Risk.Low : proposal.Capabilities.Max(c => c.Risk);
         return new ApprovalModel(
             $"Add “{proposal.Manifest.Name}”",
@@ -89,6 +102,8 @@ public sealed record ApprovalModel(
             risk,
             HoldToApprove: risk == Risk.High,
             ApproveLabel: risk == Risk.High ? "Hold to add" : "Add",
-            RiskLine: "A small folder you own. It contains no code, and you can remove it any time.");
+            RiskLine: proposal.Formulas.IsEmpty
+                ? "A small folder you own. It contains no code, and you can remove it any time."
+                : "A small folder you own. Its formulas can only calculate from what is listed above: no loops, no files, no network. Remove it any time.");
     }
 }
