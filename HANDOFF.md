@@ -26,9 +26,9 @@ concept.
 
 ## Where it stands (end of the first session, 2026-10-09)
 
-- **Branch and pull request.** Work is on `ccr-6c2d7909-nzeecq` (draft PR #1 into `main`),
-  pushed and clean. The repository is public.
-- **CI is green.** Every job passes at `4647a75`, including the signed MSIX for x64 and ARM64
+- **Branch and pull request.** Work was done on `ccr-6c2d7909-nzeecq` and merged into `main`
+  through PR #1. The repository is public.
+- **CI is green.** Every job passes at `5a61686`, including the signed MSIX for x64 and ARM64
   and the install-and-self-test on a Windows desktop (which also takes the screenshots in
   `docs/images`). The rolling **Latest CI build** release carries the packages from that run.
 - **Native AOT of the shell, measured again.** The probe (it runs with every package build, as the
@@ -65,8 +65,6 @@ You asked for no questions, so these defaults were taken; each is easy to change
   Spark as the only character. Principles and states in [docs/design.md](docs/design.md).
 - **Consent stays deterministic.** The approval card is generated from typed
   actions; external actions need a hold; no model output approves anything.
-- **Pull request base.** The repository had only the working branch, so there is
-  no base to open a PR against. See "For you" below.
 
 ## For you (the owner)
 
@@ -74,11 +72,12 @@ You asked for no questions, so these defaults were taken; each is easy to change
    `64c2d8d` and again on `4647a75`: the Python reference, the core on Linux and Windows, the design
    sync, the Native AOT build, both Windows compiles of the shell, and the signed MSIX for x64
    and ARM64. That includes the shell changes made after `489180f` (habit persistence and the
-   on-device classifier in the bar), which had not been compiled before. Still to do on the
-   GitHub side: turn on **private vulnerability reporting** (Settings → Code security) because
-   [SECURITY.md](SECURITY.md) points reporters there; decide the name, because "Claude" is
-   Anthropic's trademark ([NOTICE](NOTICE)); and merge or retarget the pull request (its base is
-   `main`; the default branch is currently the working branch). `research_notes/` and `reports/`
+   on-device classifier in the bar), which had not been compiled before. Pull request #1 was
+   merged into `main` at the end of the first session. Still to do on the GitHub side: switch the
+   default branch to `main` (Settings → Branches; it is still the working branch
+   `ccr-6c2d7909-nzeecq`, which can then be deleted); turn on **private vulnerability reporting**
+   (Settings → Code security) because [SECURITY.md](SECURITY.md) points reporters there; and
+   decide the name, because "Claude" is Anthropic's trademark ([NOTICE](NOTICE)). `research_notes/` and `reports/`
    were read through before publication: they are public-source research, and the few
    third-party email addresses they quoted from package registries were removed.
 
@@ -99,9 +98,12 @@ You asked for no questions, so these defaults were taken; each is easy to change
    credential store, not a file. Then try the walk-through's chart and plan steps;
    this is the first contact between the prompts and the live API, so expect to tune
    them.
-5. **Pull request.** `main` did not exist, so it was created at `f2ea2a3` (the commit before this
-   build started) and a draft PR (#1) was opened from the working branch. Review it, and
-   change the base or the default branch if you prefer another arrangement.
+5. **Using a Claude subscription instead of an API key.** Not built, on purpose. Anthropic's published
+   rules do not let a third-party app offer Claude.ai sign-in or route requests through Free, Pro or Max
+   credentials ("unless previously approved"), and developers may not collect or store those credentials.
+   The app takes an API key (Credential Locker); Bedrock, Vertex or Foundry credentials would also be
+   allowed and fit behind `IModelClient`. Subscription sign-in needs Anthropic's written approval first
+   (contact sales); see [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance).
 
 ## What is next
 
