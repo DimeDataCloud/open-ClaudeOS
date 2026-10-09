@@ -167,10 +167,12 @@ measures what this build can measure and reports it with the target from the
 - **The shell has not been run by the author of this code.** It compiles; the
   first real run is the point of milestone M0. Expect polish bugs on first run
   (focus, DPI, shadow on frameless windows).
-- **Live Claude behaviour.** The SDK adapter is tested against a fake server, and
-  the prompts have been reviewed but not run against the live API in this
-  repository's CI (it has no key, by design). The first run with a real key
-  may need prompt tuning.
+- **Live Claude behaviour.** The SDK adapter is tested against a fake server. It
+  has also been pointed at the real endpoint with a placeholder key, which
+  reached `api.anthropic.com` and came back as a plain-words explanation ("Claude
+  rejected the API key"). With a *valid* key nothing has been run: this
+  repository's CI has none, by design, so the prompts have been reviewed but not
+  exercised by a real model. The first run with a real key may need prompt tuning.
 - **NPU routing, Windows OCR placement, Agent Launcher registration, global
   hotkey conflicts** are on the M0 list; the device check reports what it can
   and says plainly when something is not wired up yet.
