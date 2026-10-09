@@ -65,6 +65,21 @@ public sealed class ArtifactMakerTests : IDisposable
     }
 
     [Fact]
+    public async Task Editing_a_chart_shows_Claude_the_recipe_on_screen_and_runs_the_revision()
+    {
+        var current = ChartSpecJson.Write(ChartSpec.Parse(Chart));
+        var revised = Chart.Replace("\"mark\":\"bar\"", "\"mark\":\"bar\",\"style\":{\"color\":\"#2A78D6\"}");
+        var model = new ScriptedModel(Calls(Use("t1", "create_chart", revised)));
+        var data = await new ArtifactMaker(model).EditChartAsync(current, "make the bars blue", _ws.Overlay(), new Policy());
+
+        var opening = Assert.IsType<TextPart>(model.Requests[0].Messages[0].Content[0]).Text;
+        Assert.Contains("recipe of the chart on screen", opening);
+        Assert.Contains("make the bars blue", opening);
+        Assert.Contains("\"derive\"", opening);
+        Assert.Equal("#2A78D6", data.Spec.SeriesColor);
+    }
+
+    [Fact]
     public async Task A_question_instead_of_a_recipe_is_surfaced()
     {
         var model = new ScriptedModel(Reply(StopKind.EndTurn, null, new TextPart("Which column holds the amount?")));
@@ -75,7 +90,6 @@ public sealed class ArtifactMakerTests : IDisposable
     [Fact]
     public async Task A_mod_that_asks_for_more_than_it_reads_is_sent_back()
     {
-        var tooMuch = """{"manifest":{"id":"clock","name":"Clock","kind":"widget","placement":{"size":[160,60]},"capabilities":["system.time","files.recent"],"view":{"metric":"{system.time.hour}"}}}""";
         var fixedManifest = """{"manifest":{"id":"clock","name":"Clock","kind":"widget","placement":{"size":[160,60]},"capabilities":["system.time"],"view":{"metric":"{system.time.hour}"}}}""";
         // The model forgot a capability the view reads, then fixes it.
         var forgot = """{"manifest":{"id":"clock","name":"Clock","kind":"widget","placement":{"size":[160,60]},"capabilities":[],"view":{"metric":"{system.time.hour}"}}}""";
@@ -85,7 +99,6 @@ public sealed class ArtifactMakerTests : IDisposable
 
         Assert.Contains("does not declare a capability", Results(model.Requests[1])["a"].Content);
         Assert.Equal("clock", proposal.Manifest.Id);
-        _ = tooMuch;
     }
 
     [Fact]

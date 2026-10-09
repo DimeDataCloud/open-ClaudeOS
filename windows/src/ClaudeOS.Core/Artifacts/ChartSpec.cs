@@ -40,7 +40,8 @@ public sealed record ChartSpec(
     FieldEncoding X,
     FieldEncoding Y,
     FieldEncoding? Color = null,
-    bool Stack = false)
+    bool Stack = false,
+    string? SeriesColor = null)
 {
     public const int MaxPoints = 600;
 
@@ -65,7 +66,7 @@ public sealed record ChartSpec(
         }
 
         Require(e.ValueKind == JsonValueKind.Object, "chart spec must be an object");
-        var allowed = new HashSet<string> { "type", "title", "data", "transform", "mark", "x", "y", "color", "stack" };
+        var allowed = new HashSet<string> { "type", "title", "data", "transform", "mark", "x", "y", "color", "stack", "style" };
         var unknown = e.EnumerateObject().Select(p => p.Name).Where(n => !allowed.Contains(n)).Order().ToList();
         Require(unknown.Count == 0, $"unknown chart fields: {string.Join(", ", unknown)}");
 
@@ -91,6 +92,18 @@ public sealed record ChartSpec(
             var other => throw new SpecException($"mark must be one of bar, line, area, point (got '{other}')"),
         };
 
+        string? seriesColor = null;
+        if (e.TryGetProperty("style", out var style) && style.ValueKind == JsonValueKind.Object)
+        {
+            var styleUnknown = style.EnumerateObject().Select(p => p.Name).Where(n => n != "color").ToList();
+            Require(styleUnknown.Count == 0, $"unknown style fields: {string.Join(", ", styleUnknown)}; only color is supported");
+            if (style.TryGetProperty("color", out var c))
+            {
+                seriesColor = c.ValueKind == JsonValueKind.String ? c.GetString() : null;
+                Require(seriesColor is not null && Design.Rgba.TryParse(seriesColor, out _), "style.color must be a hex colour like #2A78D6");
+            }
+        }
+
         return new ChartSpec(
             e.TryGetProperty("title", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null,
             source,
@@ -99,7 +112,8 @@ public sealed record ChartSpec(
             Encoding(e, "x") ?? throw new SpecException("chart spec needs x: {\"field\": ...}"),
             Encoding(e, "y") ?? throw new SpecException("chart spec needs y: {\"field\": ...}"),
             Encoding(e, "color"),
-            e.TryGetProperty("stack", out var st) && st.ValueKind == JsonValueKind.True);
+            e.TryGetProperty("stack", out var st) && st.ValueKind == JsonValueKind.True,
+            seriesColor);
     }
 
     private static FieldEncoding? Encoding(JsonElement e, string name)
@@ -207,5 +221,94 @@ public sealed record ChartSpec(
         {
             throw new SpecException(message);
         }
+    }
+}
+
+/// <summary>The recipe as compact JSON, so an edit request can show Claude what is on screen.</summary>
+public static class ChartSpecJson
+{
+    public static string Write(ChartSpec spec)
+    {
+        using var stream = new MemoryStream();
+        using (var w = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+        {
+            w.WriteStartObject();
+            w.WriteString("type", "chart");
+            if (spec.Title is not null) { w.WriteString("title", spec.Title); }
+            w.WriteStartObject("data"); w.WriteString("source", spec.DataSource); w.WriteEndObject();
+            if (spec.Transforms.Length > 0)
+            {
+                w.WriteStartArray("transform");
+                foreach (var t in spec.Transforms)
+                {
+                    w.WriteStartObject();
+                    switch (t)
+                    {
+                        case FilterTransform f:
+                            w.WriteStartObject("filter");
+                            w.WriteString("field", f.Field);
+                            w.WriteString("op", f.Op switch { FilterOp.Eq => "=", FilterOp.Ne => "!=", FilterOp.Gt => ">", FilterOp.Ge => ">=", FilterOp.Lt => "<", FilterOp.Le => "<=", FilterOp.In => "in", _ => "contains" });
+                            w.WritePropertyName("value");
+                            if (f.Values.Length == 1 && f.Op != FilterOp.In) { WriteValue(w, f.Values[0]); }
+                            else { w.WriteStartArray(); foreach (var v in f.Values) { WriteValue(w, v); } w.WriteEndArray(); }
+                            w.WriteEndObject();
+                            break;
+                        case DeriveTransform d:
+                            w.WriteStartObject("derive"); w.WriteString("as", d.As); w.WriteString("from", d.From); w.WriteString("unit", d.Unit); w.WriteEndObject();
+                            break;
+                        case GroupTransform g:
+                            w.WriteStartObject("group");
+                            w.WriteStartArray("by"); foreach (var b in g.By) { w.WriteStringValue(b); } w.WriteEndArray();
+                            w.WriteStartArray("aggregate");
+                            foreach (var a in g.Aggregates)
+                            {
+                                w.WriteStartObject();
+                                w.WriteString("op", a.Op.ToString().ToLowerInvariant());
+                                if (a.Field is not null) { w.WriteString("field", a.Field); }
+                                w.WriteString("as", a.As);
+                                w.WriteEndObject();
+                            }
+
+                            w.WriteEndArray();
+                            w.WriteEndObject();
+                            break;
+                        case SortTransform s:
+                            w.WriteStartObject("sort"); w.WriteString("field", s.Field); w.WriteString("order", s.Descending ? "desc" : "asc"); w.WriteEndObject();
+                            break;
+                        case LimitTransform l:
+                            w.WriteNumber("limit", l.Count);
+                            break;
+                    }
+
+                    w.WriteEndObject();
+                }
+
+                w.WriteEndArray();
+            }
+
+            w.WriteString("mark", spec.Mark.ToString().ToLowerInvariant());
+            WriteField(w, "x", spec.X);
+            WriteField(w, "y", spec.Y);
+            if (spec.Color is not null) { WriteField(w, "color", spec.Color); }
+            if (spec.Stack) { w.WriteBoolean("stack", true); }
+            if (spec.SeriesColor is not null) { w.WriteStartObject("style"); w.WriteString("color", spec.SeriesColor); w.WriteEndObject(); }
+            w.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static void WriteValue(Utf8JsonWriter w, object v)
+    {
+        if (v is double d) { w.WriteNumberValue(d); } else { w.WriteStringValue(v.ToString()); }
+    }
+
+    private static void WriteField(Utf8JsonWriter w, string name, FieldEncoding f)
+    {
+        w.WriteStartObject(name);
+        w.WriteString("field", f.Field);
+        if (f.Title is not null) { w.WriteString("title", f.Title); }
+        if (f.Format is not null) { w.WriteString("format", f.Format); }
+        w.WriteEndObject();
     }
 }
