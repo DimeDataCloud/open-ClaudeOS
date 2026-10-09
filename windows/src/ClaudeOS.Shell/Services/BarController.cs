@@ -7,10 +7,10 @@ using ClaudeOS.Shell.Interop;
 
 namespace ClaudeOS.Shell.Services;
 
-public enum ResultKind { File, Window, Command, Hint }
+internal enum ResultKind { File, Window, Command, Hint }
 
 /// <summary>One row in the bar's list.</summary>
-public sealed record BarResult(ResultKind Kind, string Title, string Subtitle, string Glyph, string? Target = null);
+internal sealed record BarResult(ResultKind Kind, string Title, string Subtitle, string Glyph, string? Target = null);
 
 /// <summary>
 /// The logic behind the Intent Bar, with no UI in it: what to suggest while you type, and what
