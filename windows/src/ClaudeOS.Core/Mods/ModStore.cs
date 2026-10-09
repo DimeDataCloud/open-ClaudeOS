@@ -19,7 +19,8 @@ public sealed record ModProposal(
     ImmutableArray<CapabilityLine> Capabilities,
     RenderedNode? Preview,
     ImmutableArray<string> DataPaths,
-    Plan Plan);
+    Plan Plan,
+    ImmutableArray<string> Formulas);
 
 public enum ModStatus { Active, Disabled, NeedsReview, Invalid }
 
@@ -42,9 +43,9 @@ public sealed class ModStore(string modsRoot, CapabilityBroker broker)
     public ModProposal Review(string manifestJson, ViewBinder? previewWith = null)
     {
         var manifest = ModManifest.Parse(manifestJson);
-        if (manifest.Level != ModLevel.Declarative)
+        if (manifest.Level == ModLevel.Web)
         {
-            throw new ModException($"{manifest.Level.ToString().ToLowerInvariant()} mods are not available yet; declarative mods (pure JSON, no code) are");
+            throw new ModException("web mods are not available yet; declarative mods (pure JSON) and scripted mods (JSON with formulas) are");
         }
 
         var lines = manifest.Capabilities.Select(c =>
@@ -53,11 +54,11 @@ public sealed class ModStore(string modsRoot, CapabilityBroker broker)
             return new CapabilityLine(c, text, info.Risk);
         }).ToImmutableArray();
 
-        var paths = manifest.View?.Paths().Where(p => !p.StartsWith("settings.", StringComparison.Ordinal)).Distinct().Order().ToImmutableArray() ?? [];
+        var paths = manifest.DataPaths();
         var uncovered = paths.Where(p => !manifest.Capabilities.Any(c => CapabilityBroker.Covers(Capabilities.Known[Capabilities.Split(c).Id].DataPrefix, p))).ToList();
         if (uncovered.Count > 0)
         {
-            throw new ModException($"the view reads {string.Join(", ", uncovered)} but the mod does not declare a capability for it");
+            throw new ModException($"the mod reads {string.Join(", ", uncovered)} but does not declare a capability for it");
         }
 
         RenderedNode? preview = null;
@@ -72,7 +73,7 @@ public sealed class ModStore(string modsRoot, CapabilityBroker broker)
             $"Install the mod '{manifest.Name}'",
             "Adds one folder to your mods. Nothing outside it changes.",
             [new WriteFile($"{manifest.Id}/mod.json", manifestJson)]);
-        return new ModProposal(manifest, manifestJson, lines, preview, paths, plan);
+        return new ModProposal(manifest, manifestJson, lines, preview, paths, plan, Script.Describe(manifest));
     }
 
     /// <summary>Record the approval after the plan has been applied.</summary>

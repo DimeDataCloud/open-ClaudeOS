@@ -205,5 +205,14 @@ can write one from a sentence; you still approve it.
 
 ![Approving a widget](images/widget-approval-light.png)
 
-Scripted and web mods are designed (see the [architecture](architecture.md)) but
-refused for now: they are not available until their sandboxes exist.
+A mod that needs a little arithmetic or a condition (round the battery, warn
+below a threshold, shorten a title) uses the **scripted** level: the same JSON,
+plus named formulas. A formula is one expression, not a program: numbers, text,
+the usual operators and a short fixed list of functions. It has no loops, no
+assignment and no way to call anything else, so every formula finishes, and the
+only thing it can do is calculate a value from the data you approved. The
+approval card lists every formula in full. `claudeos mod <mod.json>` shows that
+card and a preview from a terminal; try it on `examples/mods/battery-nudge`.
+
+Web mods (a full HTML interface) are designed but refused for now: they are not
+available until their WebView2 sandbox exists.

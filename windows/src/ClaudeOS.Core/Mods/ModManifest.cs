@@ -38,12 +38,16 @@ public sealed record ModManifest(
     ImmutableArray<SettingField> Settings,
     ImmutableArray<LayoutRuleSpec> Rules,
     ImmutableArray<CommandSpec> Commands,
-    JsonElement? Theme)
+    JsonElement? Theme,
+    ImmutableSortedDictionary<string, string>? Defs = null)
 {
+    /// <summary>Named formulas a scripted mod can refer to by name from its view (and from each other).</summary>
+    public ImmutableSortedDictionary<string, string> Defs { get; init; } = Defs ?? ImmutableSortedDictionary<string, string>.Empty.WithComparers(StringComparer.Ordinal);
+
     private static readonly Regex IdRx = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly HashSet<string> Allowed =
-        ["id", "name", "version", "kind", "level", "capabilities", "placement", "view", "settings", "rules", "commands", "theme", "description"];
+        ["id", "name", "version", "kind", "level", "capabilities", "placement", "view", "settings", "rules", "commands", "theme", "description", "defs"];
 
     public const int MaxManifestBytes = 64 * 1024;
 
@@ -187,8 +191,30 @@ public sealed record ModManifest(
             throw new ModException("a theme mod needs a theme block");
         }
 
-        return new ModManifest(id, Str(e, "name"), e.TryGetProperty("version", out var ver) ? ver.GetString() ?? "0.1.0" : "0.1.0", kind, level, caps.ToImmutable(), placement, view, settings.ToImmutable(), rules.ToImmutable(), commands.ToImmutable(), theme);
+        var defs = ImmutableSortedDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
+        if (e.TryGetProperty("defs", out var ds))
+        {
+            if (ds.ValueKind != JsonValueKind.Object)
+            {
+                throw new ModException("defs must be an object of name: formula");
+            }
+
+            foreach (var d in ds.EnumerateObject())
+            {
+                defs[d.Name] = d.Value.ValueKind == JsonValueKind.String ? d.Value.GetString()! : throw new ModException($"def '{d.Name}' must be a formula written as text");
+            }
+        }
+
+        var manifest = new ModManifest(id, Str(e, "name"), e.TryGetProperty("version", out var ver) ? ver.GetString() ?? "0.1.0" : "0.1.0", kind, level, caps.ToImmutable(), placement, view, settings.ToImmutable(), rules.ToImmutable(), commands.ToImmutable(), theme, defs.ToImmutable());
+        Script.Validate(manifest);
+        return manifest;
     }
+
+    /// <summary>
+    /// Every piece of data the mod reads, as paths like <c>system.battery.percent</c>, so the approval
+    /// card can list them and the store can check each is covered by a declared capability.
+    /// </summary>
+    public ImmutableArray<string> DataPaths() => Script.DataPaths(this);
 
     private static SettingField ParseSetting(string key, JsonElement s)
     {

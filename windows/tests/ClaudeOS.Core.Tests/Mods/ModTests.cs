@@ -192,10 +192,10 @@ public sealed class ModTests : IDisposable
     }
 
     [Fact]
-    public void Scripted_and_web_mods_are_refused_honestly_until_they_exist()
+    public void Web_mods_are_refused_honestly_until_their_sandbox_exists()
     {
         var store = new ModStore(Path.Combine(_ws.Base, "mods"), new CapabilityBroker());
-        var json = """{"id":"x","name":"X","kind":"command","level":"scripted","commands":[{"phrase":"p","steps":["open a"]}]}""";
+        var json = """{"id":"x","name":"X","kind":"command","level":"web","commands":[{"phrase":"p","steps":["open a"]}]}""";
         Assert.Contains("not available yet", Assert.Throws<ModException>(() => store.Review(json)).Message);
     }
 

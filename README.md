@@ -47,7 +47,7 @@ sheet costs about what a 5-row one does).
 | ![A chart](docs/images/chart-light.png) | **Make things, in their own window.** "Chart spend by month" opens a chart with no title bar or toolbar: just the chart. Drag it from anywhere; say "make the bars blue" and Claude revises the recipe. It was drawn locally from every row; Claude saw only the column names and a few samples. |
 | ![Approval](docs/images/approval-injection-dark.png) | **See what will happen before it does.** One of these invoices has a hidden instruction to email the workspace to a stranger. The model didn't follow it, but if a plan did, the email would be on the card, flagged, and sending it takes a deliberate hold. A plan that touches a protected path is refused before you are asked. |
 | ![Made room](docs/images/made-room-dark.png) | **Windows find room.** New content goes where there is free space. When there isn't, the fewest windows move, by the smallest amount, and "put it back" restores the screen exactly. This is geometry, not AI. It also notices habits and only offers: put three charts in the top right and it asks whether new ones should open there; "yes" shows a card and writes a rule you can delete. |
-| ![A widget](docs/images/widget-approval-light.png) | **Yours to change.** Widgets, themes and commands are small files you own (mods). Each says in plain words what it can read, you approve those words, and every read is checked against them. Claude can write one from a sentence; you still approve it. |
+| ![A widget](docs/images/widget-approval-light.png) | **Yours to change.** Widgets, themes and commands are small files you own (mods). Each says in plain words what it can read, you approve those words, and every read is checked against them. A mod that needs a calculation gets formulas, not code, and you see each one. Claude can write one from a sentence; you still approve it. |
 
 ### The running shell
 
@@ -89,6 +89,9 @@ dotnet run --project src/ClaudeOS.Cli -- undo
 # Draw a chart recipe locally from a CSV
 dotnet run --project src/ClaudeOS.Cli -- chart ../examples/charts/spend-by-month.chart.json \
   --data ../examples/charts/q3-budget.csv --out spend.svg
+
+# Review a mod the way you would before installing it: the card, its formulas, a preview
+dotnet run --project src/ClaudeOS.Cli -- mod ../examples/mods/battery-nudge/mod.json --set system.battery.percent=9
 
 # See how a request is routed (and that it never needs a model)
 dotnet run --project src/ClaudeOS.Cli -- route "open the q3 budget"
@@ -133,7 +136,7 @@ windows/src/ClaudeOS.Core    actions, policy, consent, undo, routing, layout, ch
 windows/src/ClaudeOS.Claude  the one place that talks to the Anthropic SDK
 windows/src/ClaudeOS.Cli     the same core on a terminal
 windows/src/ClaudeOS.Shell   the WinUI 3 app
-windows/tests                296 tests
+windows/tests                376 tests
 design/                      tokens (one source → CSS, XAML, C#), prototype, screenshots
 src/claudeos, tests/         the Python reference (Phase 0)
 ```
@@ -144,13 +147,14 @@ This is a pre-release. What has been verified, and by what:
 
 | | State |
 |---|---|
-| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 296 tests (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
+| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 376 tests (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
 | Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
 | Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
 | Windows shell | **Compiles for x64 and ARM64 in CI, packages as a signed MSIX, and in CI is installed on a Windows desktop and tests itself** (bar, chart, widget, approval card with a planted email, hold-to-approve). It has **not yet been run on a Surface**; expect polish bugs in how it looks and feels. That is milestone M0 |
 | NPU routing, Agent Launcher | Designed; M0 measures them. The device check says plainly what is not wired up yet |
 | Native AOT | **Core and CLI: verified** (CI publishes and runs the native binary). **Shell: no**: the official Anthropic SDK needs reflection-based JSON, so the shell runs on the regular .NET runtime. [Details](docs/stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk) |
-| Scripted and web mods | Designed, deliberately refused until their sandboxes exist. Declarative mods (no code) work |
+| Scripted mods | **Built and tested on Linux**: formulas (no loops, no calls out) with a step budget, shown in full on the approval card; the native binary runs them. The shell draws them like any widget but that path has not run on Windows yet |
+| Web mods | Designed, deliberately refused until the WebView2 sandbox exists |
 
 Open decisions for the owner are in [HANDOFF.md](HANDOFF.md): the license is
 Apache-2.0 (the recommended default, taken so the project can be shared), and

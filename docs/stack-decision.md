@@ -105,7 +105,7 @@ reverses the decision.
 | Phi Silica | Not used | Needs a limited-access token and is being removed. |
 | API key in DPAPI | **Credential Locker** (`PasswordVault`), with `ANTHROPIC_API_KEY` as a fallback for developers | It is the per-user encrypted store with an official API, and it needs no key management of our own. |
 | Presence drawn with Composition | **Done** (`PresenceOrb`): halo, core and ring as Composition visuals; animation runs on the compositor | As decided. |
-| WebView2 for custom HTML artifacts, Jint for mod scripts | **Not built.** Declarative mods only; scripted and web levels are refused with a clear message | They need sandboxes first; shipping them without would break the security model. |
+| WebView2 for custom HTML artifacts, Jint for mod scripts | **Scripted: built, but not with Jint.** A small total formula language in the core (no loops, no assignment, no calls out) with a step budget; **web: not built**, refused with a clear message | A sandbox you do not have to build is the safest one: formulas can only calculate, so there is nothing to escape into, and the core stays dependency-free and AOT-clean. Web mods still need their WebView2 sandbox first. |
 
 ### Native AOT: measured, and the answer is "not with this SDK"
 

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -27,6 +28,8 @@ public sealed class ViewBinder(CapabilityBroker broker, IEnumerable<IDataProvide
 
     public IReadOnlyList<IDataProvider> Providers => _providers;
 
+    private readonly ConcurrentDictionary<string, Formula> _formulas = new(StringComparer.Ordinal);
+
     public RenderedNode Bind(ModManifest mod, IReadOnlyDictionary<string, string>? settings = null)
     {
         var view = mod.View ?? throw new ModException($"mod '{mod.Id}' has no view");
@@ -36,20 +39,21 @@ public sealed class ViewBinder(CapabilityBroker broker, IEnumerable<IDataProvide
             values[f.Key] = settings is not null && settings.TryGetValue(f.Key, out var v) ? v : f.Default;
         }
 
-        return BindNode(mod, view, values);
+        var run = mod.Level == ModLevel.Scripted ? new FormulaRun(this, mod, values) : null;
+        return BindNode(mod, view, values, run);
     }
 
-    private RenderedNode BindNode(ModManifest mod, ViewNode node, Dictionary<string, string> settings)
+    private RenderedNode BindNode(ModManifest mod, ViewNode node, Dictionary<string, string> settings, FormulaRun? run)
     {
-        string Fill(string? text) => Substitute(mod, text, settings);
+        string Fill(string? text) => Substitute(mod, text, settings, run);
         var primary = Fill(node.Primary);
         var secondary = Fill(node.Secondary);
         double? number = double.TryParse(Fill(node.Value ?? node.Primary), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : null;
         double? max = double.TryParse(Fill(node.Max), NumberStyles.Float, CultureInfo.InvariantCulture, out var m) ? m : null;
-        return new RenderedNode(node.Kind, primary, secondary, node.Kind == ViewKind.Gauge ? number : null, max, [.. node.Children.Select(c => BindNode(mod, c, settings))]);
+        return new RenderedNode(node.Kind, primary, secondary, node.Kind == ViewKind.Gauge ? number : null, max, [.. node.Children.Select(c => BindNode(mod, c, settings, run))]);
     }
 
-    private string Substitute(ModManifest mod, string? text, Dictionary<string, string> settings)
+    private string Substitute(ModManifest mod, string? text, Dictionary<string, string> settings, FormulaRun? run)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -57,36 +61,27 @@ public sealed class ViewBinder(CapabilityBroker broker, IEnumerable<IDataProvide
         }
 
         var sb = new StringBuilder();
-        for (var i = 0; i < text.Length; i++)
+        var last = 0;
+        foreach (var (start, end, body) in Placeholders.Spans(text, quoteAware: run is not null))
         {
-            if (text[i] != '{')
-            {
-                sb.Append(text[i]);
-                continue;
-            }
-
-            var close = text.IndexOf('}', i + 1);
-            if (close < 0)
-            {
-                sb.Append(text, i, text.Length - i);
-                break;
-            }
-
-            var path = text[(i + 1)..close].Trim();
-            sb.Append(Resolve(mod, path, settings));
-            i = close;
+            sb.Append(text, last, start - last);
+            sb.Append(run is null ? Resolve(mod, body, settings) : run.Text(body));
+            last = end + 1;
         }
 
+        // An opening brace that never closes is plain text, as it always was.
+        sb.Append(text, last, text.Length - last);
         return sb.ToString();
     }
 
-    private string Resolve(ModManifest mod, string path, Dictionary<string, string> settings)
-    {
-        if (path.StartsWith("settings.", StringComparison.Ordinal))
-        {
-            return settings.TryGetValue(path["settings.".Length..], out var s) ? s : "";
-        }
+    private string Resolve(ModManifest mod, string path, Dictionary<string, string> settings) =>
+        path.StartsWith("settings.", StringComparison.Ordinal)
+            ? settings.TryGetValue(path["settings.".Length..], out var s) ? s : ""
+            : ReadPath(mod, path);
 
+    /// <summary>Read one piece of data for a mod. The broker is asked first, every time.</summary>
+    private string ReadPath(ModManifest mod, string path)
+    {
         broker.Require(mod.Id, path);
         foreach (var p in _providers.OrderByDescending(p => p.Prefix.Length))
         {
@@ -97,6 +92,59 @@ public sealed class ViewBinder(CapabilityBroker broker, IEnumerable<IDataProvide
         }
 
         return "—";
+    }
+
+    private Formula Compile(string source)
+    {
+        if (_formulas.Count > 512)
+        {
+            _formulas.Clear();
+        }
+
+        return _formulas.GetOrAdd(source, Formula.Parse);
+    }
+
+    /// <summary>One draw of a scripted mod: its own step budget, its defs worked out once each.</summary>
+    private sealed class FormulaRun(ViewBinder owner, ModManifest mod, Dictionary<string, string> settings)
+    {
+        private readonly FormulaBudget _budget = new(FormulaBudget.PerWidget);
+        private readonly Dictionary<string, FormulaValue> _defs = new(StringComparer.Ordinal);
+
+        /// <summary>The shown text of one <c>{formula}</c>. Running out of budget shows a dash; a refused read is not caught.</summary>
+        public string Text(string body)
+        {
+            try
+            {
+                return owner.Compile(body).Evaluate(Lookup, _budget).Display;
+            }
+            catch (FormulaLimitException)
+            {
+                return "—";
+            }
+        }
+
+        private FormulaValue Lookup(string name)
+        {
+            if (name.StartsWith("settings.", StringComparison.Ordinal))
+            {
+                return settings.TryGetValue(name["settings.".Length..], out var s) ? FormulaValue.FromData(s) : FormulaValue.Missing;
+            }
+
+            if (name.Contains('.'))
+            {
+                return FormulaValue.FromData(owner.ReadPath(mod, name));
+            }
+
+            if (_defs.TryGetValue(name, out var done))
+            {
+                return done;
+            }
+
+            // Cycles were refused when the manifest was read, so this always ends.
+            var value = mod.Defs.TryGetValue(name, out var source) ? owner.Compile(source).Evaluate(Lookup, _budget) : FormulaValue.Missing;
+            _defs[name] = value;
+            return value;
+        }
     }
 }
 

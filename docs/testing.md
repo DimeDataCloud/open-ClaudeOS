@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 296 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 376 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
@@ -70,6 +70,16 @@ What they pin down:
   grammar and its limits, the capability broker checking every read, approval
   bound to the manifest digest (editing a mod re-opens review), disabled and
   invalid mods.
+- **Scripted mods** (`Mods/ScriptedModTests`): every operator and function; missing data
+  flowing through as a dash; division by zero; lazy `if`; strict, helpful parse errors (an
+  unknown function lists the real ones); length, depth and size limits; the step budget (a view
+  of 58 heavy gauges stops part-way and says so, in well under a second); circular and
+  undefined defs refused; a formula hidden in a def still cannot read what was not granted;
+  editing a formula after approval sends the mod back for review; a 20,000-sample grammar-aware
+  fuzz of formulas and their mutations that may only ever end in a result, a dash or a
+  `ModException`; the repository's example mods review cleanly; the prompt that teaches Claude
+  to write formulas lists exactly the functions that exist. CI also publishes the CLI with
+  Native AOT and runs `claudeos mod` on an example.
 - **Presence** (`Presence/`): the state machine, driven event by event, including
   offline and reduced-motion behaviour.
 - **Prompt injection.** `Prompt_injection_in_a_file_is_data_the_policy_still_contains`
