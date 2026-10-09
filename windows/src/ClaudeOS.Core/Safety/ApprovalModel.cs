@@ -55,6 +55,19 @@ public sealed record ApprovalModel(
 
     public static ApprovalModel FromMod(ModProposal proposal)
     {
+        if (proposal.Manifest.Kind == ModKind.LayoutRule)
+        {
+            return new ApprovalModel(
+                $"Add “{proposal.Manifest.Name}”",
+                null,
+                [.. proposal.Manifest.Rules.Select(r => new ApprovalRow("Placement", false, $"New {r.ContentKind} windows open on {r.Anchor.Replace('-', ' ')}", ["It reads nothing and runs no code."], null, []))],
+                "",
+                Risk.Low,
+                HoldToApprove: false,
+                ApproveLabel: "Add",
+                RiskLine: "A small file you own. Delete it any time to go back.");
+        }
+
         var rows = proposal.Capabilities.Select(c => new ApprovalRow(
             c.Risk == Risk.High ? "Leaves this PC" : "Can read",
             c.Risk == Risk.High,

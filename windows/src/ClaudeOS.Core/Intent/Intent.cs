@@ -28,4 +28,7 @@ public sealed record MakeIntent(string Raw, MakeKind Kind, string Request) : Use
 public sealed record ChangeIntent(string Raw, string Request) : UserIntent(Raw);
 
 /// <summary>Needs a model to understand; the router sends it on.</summary>
+/// <summary>"Yes" or "not now" to something the presence offered, such as a placement rule.</summary>
+public sealed record SuggestionReplyIntent(string Raw, bool Accepted) : UserIntent(Raw);
+
 public sealed record UnclearIntent(string Raw) : UserIntent(Raw);
