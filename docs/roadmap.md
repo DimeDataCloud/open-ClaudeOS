@@ -23,7 +23,7 @@ each item.
 - [x] License: Apache-2.0 ([LICENSE](../LICENSE), [NOTICE](../NOTICE)); the name is still open
 - [x] [CONTRIBUTING](../CONTRIBUTING.md), [code of conduct](../CODE_OF_CONDUCT.md), [SECURITY](../SECURITY.md) with private reporting
 - [x] CI: Python and .NET tests on Linux and Windows, the Windows shell compiled for x64 and ARM64, a signed MSIX, a token-drift check
-- [ ] The injection corpus as a required check (one case exists in the planner tests; it should grow into a corpus)
+- [x] The injection corpus as a required check: 23 hostile plans (exfiltration, protected-file writes, escapes, look-alike recipients, swapped plans) with exact verdicts, plus a seeded 20,000-path fuzz of the path policy (`Safety/InjectionCorpusTests`, `PathFuzzTests`)
 - [x] The trusted core is `ClaudeOS.Core/Safety`; changes to it are reviewed against [CONTRIBUTING](../CONTRIBUTING.md)
 
 **Exit test:** a newcomer can clone, run the demo and open a pull request

@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 248 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 296 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
@@ -77,6 +77,16 @@ What they pin down:
   asserts that the injected email still reaches the card, flagged, and that
   nothing external runs without approval. `The_model_cannot_rewrite_the_intent`
   checks that a plan cannot change what you asked for.
+- **Injection corpus and path fuzz** (`Safety/InjectionCorpusTests`, `Safety/PathFuzzTests`).
+  Twenty-three hostile plans, each with the exact verdict it must get: a hidden recipient among
+  trusted ones, look-alike domains, an HTTP POST that carries the workspace out, `.env` in any
+  case, copying or deleting the key file, `..` escapes, absolute and UNC paths, alternate data
+  streams, device names, trailing dots, and plans that mix good actions with one bad one.
+  Declining any of them leaves every file byte-identical and the outbox empty, and a grant for
+  one plan will not run another. A seeded fuzz then throws 20,000 adversarial paths at the path
+  policy: each must be denied or land inside the workspace with no protected part. Writing these
+  found two real gaps (a path with a NUL character crashed instead of being refused, and on
+  Linux a backslash name was accepted although Windows would read it as a separator); both are fixed.
 - **Making things is not gated; changing things is.** `New_files_apply_straight_away_with_undo_and_nothing_else_does`
   pins the rule that only new-file creations skip the card.
 
