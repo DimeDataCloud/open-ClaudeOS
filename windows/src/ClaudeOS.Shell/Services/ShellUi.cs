@@ -1,5 +1,6 @@
 using ClaudeOS.Core.Layout;
 using ClaudeOS.Core.Mods;
+using ClaudeOS.Core.Safety;
 using ClaudeOS.Core.Presence;
 using ClaudeOS.Shell.Views;
 using Microsoft.UI.Dispatching;
