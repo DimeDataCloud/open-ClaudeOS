@@ -2,6 +2,7 @@ using ClaudeOS.Shell.Interop;
 using ClaudeOS.Shell.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 using Windows.System;
 using WinRT.Interop;

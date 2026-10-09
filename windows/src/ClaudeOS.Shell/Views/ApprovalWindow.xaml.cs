@@ -50,7 +50,7 @@ internal sealed partial class ApprovalWindow : Window
 
         Fill();
 
-        _holdTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+        _holdTimer = DispatcherQueue.CreateTimer();
         _holdTimer.Interval = TimeSpan.FromMilliseconds(16);
         _holdTimer.Tick += OnHoldTick;
 
