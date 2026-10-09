@@ -270,9 +270,15 @@ further: a mod can add to or change almost any surface the system draws.
    elements (text, number, chart, list, image, button) bound to data the mod
    has permission for. It runs no code, draws natively at full speed, follows
    the theme automatically, and Claude can write one in very few tokens.
-2. **Scripted.** Adds logic in JavaScript, run by a sandboxed interpreter
-   inside the app (Jint). The script can only call the host functions its
-   capabilities allow, and it has time and memory limits.
+2. **Scripted.** Adds named formulas (`defs`) and lets any `{placeholder}` in
+   the view hold an expression. *As built, this is a small total expression
+   language written for the purpose, not JavaScript in Jint:* the views the
+   first two levels cannot express are almost always a calculation or a
+   condition, and a language with no loops, no assignment and no calls out of
+   it needs no timeout, memory limit or escape analysis, adds no dependency, and
+   stays Native AOT-clean. A formula can only read data its mod was granted;
+   each read is checked on every draw. A general scripting engine can still be
+   added behind the same capability broker if a real mod needs one.
 3. **Web.** A full HTML/JS interface in a sandboxed WebView2, for anything the
    first two cannot express.
 
@@ -306,7 +312,7 @@ the folder. Before anything is installed, the approval card shows:
 
 - a live preview;
 - the capabilities it asks for, in plain words;
-- any code, if it is a scripted or web mod.
+- every formula, in full, if it is a scripted mod (and any code, if a web mod ever exists).
 
 Approve once and it loads. "Make the clock bigger" edits the mod the same
 way.
@@ -353,6 +359,19 @@ way.
 | **M2: make things** | C# core with the Claude planner (official C# SDK), scoped read-only tools and a `create_artifact` tool; native renderers; local data execution; subject-only windows; artifacts saved as files; on-device routing if available | Each content type streams in with no chrome; the token log shows spreadsheet charts cost about the same at any row count |
 | **M3: mods** | Manifest format; declarative, scripted and web levels; capabilities; widget, artifact-type, command, layout-rule and theme mods; "make me a mod" flow | You can create, tweak, disable and remove a mod by asking |
 | **M4: safe changes** | The Phase 0 core in C#: approval cards, plan-bound grants, undo journal, Recycle Bin deletes, dry-run outbox | The invoice injection demo is contained on Windows |
+
+### Where each milestone stands
+
+Updated 2026-10-09. "Built" means written and, where it can be, tested; the
+shell's behaviour on a device is only confirmed by running it (M0).
+
+| Milestone | Built | Not yet |
+|---|---|---|
+| M0: spike | Packaged MSIX built and test-signed by CI for ARM64 and x64. Tray icon and global hotkey. Frameless popups with DWM corners and acrylic. Window listing with true bounds, free-space computation and moving windows. Windows OCR availability check. A **Check this device** report that measures the targets below. | Everything on a device. NPU classifier through Windows ML. Agent Launcher registration. Copilot-key assignment. Native AOT of the shell: blocked by the official SDK, see the [stack decision](stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk); the core is verified AOT-clean. |
+| M1: open anything | Intent Bar; grammar router; file index with ranked fuzzy search; open with placement; layout engine (free space, shrink, float, make room, put it back); habits: after the third time you put a chart or widget in the same place the presence offers a rule, "yes" brings up an approval card, and the accepted rule is an ordinary layout-rule mod that the placer then applies;. | Windows Search index as the first source; native viewers and preview handlers inside subject windows |
+| M2: make things | Claude planner and artifact maker on the official SDK; scoped read-only tools; data profile instead of data; chart recipes run locally over every row; SVG renderer from design tokens; chart subject window with "Edit with Claude"; artifacts saved as files with undo. | Report, table and diagram artifacts; on-device routing. |
+| M3: mods | Strict manifest; declarative level; capability broker checked on every read; approval bound to the manifest digest; widget windows with live providers (clock, battery, CPU and memory, recent files, window count); "make me a mod" flow; the scripted level (formulas, shown in full on the approval card). | The web level, deliberately refused until its sandbox exists; theme, command and layout-rule mods are parsed and applied in the core, but the shell does not load them yet; calendar provider. |
+| M4: safe changes | The Phase 0 core in C# with byte-identical digests; approval window with hold-to-approve; undo through the bar ("undo"); dry-run outbox. | Recycle Bin deletes; real connectors behind the outbox. |
 
 Build 1 is M0 through M4. The protected-path and scoped-read rules from Phase
 0 are in from M2, because that is when Claude starts reading files.

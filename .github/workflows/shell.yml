@@ -1,0 +1,45 @@
+name: Shell (Windows)
+
+# The WinUI 3 shell can only be built on Windows. Every push compiles it for x64 and ARM64; the
+# package job produces an installable MSIX (ARM64 for the Surface Pro) signed with a test
+# certificate. Nothing here runs the app: that happens on the device (docs/testing.md).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "windows/**"
+      - "design/dist/**"
+      - ".github/workflows/shell.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: shell-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile:
+    name: Compile (${{ matrix.platform }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64, ARM64]
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build the shell
+        run: dotnet build src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -p:Platform=${{ matrix.platform }} -v:minimal "-flp:logfile=shell-errors.log;errorsonly"
+      - name: What went wrong
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path shell-errors.log) {
+            Get-Content shell-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\windows\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 25
+          }

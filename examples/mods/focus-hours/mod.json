@@ -1,0 +1,34 @@
+{
+  "id": "focus-hours",
+  "name": "Focus hours",
+  "version": "0.1.0",
+  "kind": "widget",
+  "level": "scripted",
+  "description": "The time, and what is next on your calendar, in a few words.",
+  "placement": {
+    "anchor": "bottom-right",
+    "size": [
+      200,
+      80
+    ]
+  },
+  "capabilities": [
+    "system.time",
+    "calendar.read.next"
+  ],
+  "defs": {
+    "title": "left(calendar.next.title, 26)",
+    "note": "if(len(title) > 0, title + \" · \" + coalesce(calendar.next.startsIn, \"\"), \"Nothing coming up\")"
+  },
+  "view": {
+    "stack": [
+      {
+        "metric": "{system.time.time}",
+        "label": "{system.time.date}"
+      },
+      {
+        "text": "{note}"
+      }
+    ]
+  }
+}

@@ -27,12 +27,12 @@ Both exist. TypeSafe AI is an SF-based AI lab that came out of stealth on 2026-0
 
   VKTR also reports a "$40 million seed round led by DCVC", with a quote from DCVC GP James Hardiman. Author: Michelle Hawley — [VKTR](https://www.vktr.com/ai-platforms/chatgpt-cocreator-launches-typesafe-ai-with-jev/)
 - **NOT FOUND on TypeSafe's own pages.** I found no founder list or funding figure on the homepage or the blog index. The blog index has a post titled "Diogo Almeida - Founders You Should Know", but it does not state his title — [typesafe.ai/blog](https://typesafe.ai/blog)
-- **Corroborating identity (VERIFIED, registry).** The npm maintainers use @typesafe.ai addresses: `diogo149` (diogo@typesafe.ai) and `alliesafe` (allie@typesafe.ai). The PyPI maintainer is "Daniel Gafni <daniel@typesafe.ai>" — [npm registry JSON](https://registry.npmjs.org/@typesafe-ai/sdk); [PyPI JSON](https://pypi.org/pypi/typesafe-sdk/json)
+- **Corroborating identity (VERIFIED, registry).** The npm maintainers use company-domain addresses: `diogo149` and `alliesafe`. The PyPI maintainer is "Daniel Gafni" — [npm registry JSON](https://registry.npmjs.org/@typesafe-ai/sdk); [PyPI JSON](https://pypi.org/pypi/typesafe-sdk/json)
 - Other coverage turned up in search but I did not read it: The New Stack, LetsDataScience ("TypeSafe AI Launches Jev for Structured Software Decisions"), Futura-Sciences, The Register, and a Dealroom profile ("TypeSafe AI | Jev") — [search results: thenewstack.io/typesafe-jev-system-one](https://thenewstack.io/typesafe-jev-system-one/); [letsdatascience.com](https://letsdatascience.com/news/typesafe-ai-launches-jev-decision-model-889a38c0); [app.dealroom.co](https://app.dealroom.co/companies/typesafe_ai_jev)
 
 ### Inferences
 - The pasted description is right on substance: decision-only, System One, no text generation. "Non-generative" is a fair paraphrase of TypeSafe's own words ("No text generation", "gives up string generation"), but TypeSafe does not use that word itself.
-- The CTO named in the press is **Erik** Gafni, but the PyPI maintainer is **Daniel** Gafni (daniel@typesafe.ai). These may be two different people. Do not merge them.
+- The CTO named in the press is **Erik** Gafni, but the PyPI maintainer is **Daniel** Gafni. These may be two different people. Do not merge them.
 - A search snippet attributed the line "After co-inventing ChatGPT, I spent 2 years in stealth…" to a LinkedIn URL in the name of a "Daniel Eberharter". That pairing looks like a search-index mismatch. I did not use it.
 
 ### Gaps
@@ -162,7 +162,7 @@ Both packages exist and are official. Each lists @typesafe.ai maintainers and li
     - `0.0.0-bootstrap.0`, 2026-09-12T02:56:19Z. Its description reads "Placeholder for the TypeSafe JavaScript and TypeScript SDK; not a functional SDK."
     - `0.5.7`, 2026-09-12T04:13:21Z
     - `0.6.0`, 2026-09-15T18:17:19Z. This is the `latest` dist-tag, described as "TypeScript SDK for the TypeSafe API".
-  - Maintainers are `alliesafe` (allie@typesafe.ai) and `diogo149` (diogo@typesafe.ai). The `author` field of the real versions is "evinism". Versions 0.5.7 and 0.6.0 were published by "GitHub Actions" with npm/SLSA provenance attestations.
+  - Maintainers are `alliesafe` and `diogo149`. The `author` field of the real versions is "evinism". Versions 0.5.7 and 0.6.0 were published by "GitHub Actions" with npm/SLSA provenance attestations.
   - Repository: `github.com/typesafe-ai/typesafe-sdk-js`. Homepage: `https://docs.typesafe.ai/sdk/javascript`.
   - License MIT, Node >= 20, ESM + CJS + TypeScript types, and no runtime dependencies.
 - **VERIFIED.** The npm search API reported about 1.5M weekly and 2.7M monthly downloads for `@typesafe-ai/sdk`, and "267 dependents", as of 2026-10-09 — [npm search API](https://registry.npmjs.org/-/v1/search?text=typesafe-ai&size=20)
@@ -178,7 +178,7 @@ Both packages exist and are official. Each lists @typesafe.ai maintainers and li
     | 0.7.0 | 2026-09-18T09:12Z |
     | 0.7.1 | 2026-09-21T15:57Z |
     | 0.7.2 | 2026-09-26T21:20Z (latest) |
-  - People: the author is "TypeSafe AI <support@typesafe.ai>" and the maintainer is "Daniel Gafni <daniel@typesafe.ai>". PyPI roles are Owner `danielgafni` and Maintainer `alliesafe`.
+  - People: the author is listed as "TypeSafe AI" and the maintainer is "Daniel Gafni". PyPI roles are Owner `danielgafni` and Maintainer `alliesafe`.
   - Repository: `github.com/typesafe-ai/typesafe-sdk-python`. Docs: `docs.typesafe.ai/sdk/python/`.
   - License MIT, Python >= 3.10.
   - Dependencies: `httpx2`, `pydantic>=2.12`, `tenacity`, `typing-extensions`. There is an optional `http2` extra.

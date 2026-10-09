@@ -5,3 +5,21 @@ __pycache__/
 .venv/
 build/
 dist/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.nupkg
+TestResults/
+artifacts/
+*.pfx
+*.snk
+
+# design tooling
+design/node_modules
+design/dist/*.png
+
+# design/dist holds the generated tokens.css (tracked); only its screenshots are ignored
+!design/dist/

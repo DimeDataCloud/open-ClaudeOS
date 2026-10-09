@@ -1,0 +1,8 @@
+open-ClaudeOS
+Copyright 2026 the open-ClaudeOS contributors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This is an independent community project. It is not affiliated with, endorsed by, or sponsored by
+Anthropic. "Claude" is a trademark of Anthropic. The project talks to Claude through the official
+Anthropic C# SDK and a user-supplied API key.

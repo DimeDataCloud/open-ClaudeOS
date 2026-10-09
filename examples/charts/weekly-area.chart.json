@@ -1,0 +1,12 @@
+{
+  "type": "chart",
+  "title": "Weekly spend",
+  "data": { "source": "q3-budget.csv" },
+  "transform": [
+    { "derive": { "as": "week", "from": "date", "unit": "week" } },
+    { "group": { "by": ["week"], "aggregate": [{ "op": "sum", "field": "amount", "as": "spend" }] } }
+  ],
+  "mark": "area",
+  "x": { "field": "week" },
+  "y": { "field": "spend", "format": "currency:USD" }
+}

@@ -1,0 +1,100 @@
+name: CI
+
+# Runs on pull requests and on main, not on every push to a branch that already has a pull request:
+# that used to run everything twice per commit and used up the account's Actions minutes.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-reference:
+    name: Python reference (Phase 0)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+      - name: Documentation links
+        if: matrix.python-version == '3.13'
+        run: python tools/check_links.py
+
+  core:
+    name: Core (.NET) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet build ClaudeOS.slnx -c Release
+      - run: dotnet test tests/ClaudeOS.Core.Tests -c Release --no-build
+
+  design:
+    name: Design tokens and prototype data are in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      # tokens.json is the single source: CSS, XAML and C# are generated from it.
+      - run: node design/build-tokens.mjs --check
+      # The prototype is driven by output of the real core; regenerating must change nothing.
+      - run: dotnet run --project windows/src/ClaudeOS.Cli -c Release -- demo-data
+      - run: git diff --exit-code design/prototype/data.js
+
+  native-aot:
+    name: Core and CLI compile with Native AOT and run
+    runs-on: ubuntu-latest
+    # Guards the claim that the core is trim- and AOT-compatible: publish the CLI ahead of time and run
+    # the commands that do not need the Anthropic SDK. The SDK itself is not AOT-compatible today (it
+    # needs reflection-based JSON); see docs/stack-decision.md.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish
+        working-directory: windows
+        run: dotnet publish src/ClaudeOS.Cli -c Release -r linux-x64 -p:PublishAot=true -p:TreatWarningsAsErrors=false -o "$RUNNER_TEMP/aot"
+      - name: Run the ahead-of-time binary
+        env:
+          CLAUDEOS_STATE_DIR: ${{ runner.temp }}/state
+        run: |
+          cp -r examples/invoices-demo "$RUNNER_TEMP/demo"
+          "$RUNNER_TEMP/aot/claudeos" route "can you please open the q3 budget" | tee route.txt
+          grep -q OpenIntent route.txt
+          printf 'open the q3 budget\nsnap left\nexit\n' | "$RUNNER_TEMP/aot/claudeos" shell --root examples/charts --ascii | tee shell.txt
+          grep -q "v Found it" shell.txt
+          grep -q "no windows to move" shell.txt
+          "$RUNNER_TEMP/aot/claudeos" route "i need a little widget for my battery level" | tee npu.txt
+          grep -q "via Npu" npu.txt
+          "$RUNNER_TEMP/aot/claudeos" chart examples/charts/spend-by-month.chart.json --data examples/charts/q3-budget.csv --out "$RUNNER_TEMP/chart.svg" | tee chart.txt
+          grep -q "Bar chart" chart.txt
+          "$RUNNER_TEMP/aot/claudeos" apply examples/invoices-demo.plan.json --root "$RUNNER_TEMP/demo" --yes | tee apply.txt
+          grep -q "Applied" apply.txt
+          "$RUNNER_TEMP/aot/claudeos" undo | grep -q "Undid"
+          "$RUNNER_TEMP/aot/claudeos" mod examples/mods/battery-nudge/mod.json --set system.battery.percent=9 | tee mod.txt
+          grep -q "Plug in soon" mod.txt
