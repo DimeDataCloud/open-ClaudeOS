@@ -85,10 +85,11 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         Expect(probe.Results >= 1, $"typing \"q3\" finds the file in Documents (results: {probe.Results}; the index holds {services.Files.Count} file(s))");
         Expect(probe.Visible, $"the bar is visible after being summoned (presence: {services.Bar.Presence.Frame.State}, summon took {probe.SummonMs:0} ms)");
         Expect(probe.Width > 300 && probe.Height > 40, $"the bar has a sensible size ({probe.Width}x{probe.Height})");
+        var layout = Audit(bar, "the intent bar");
         await Shot("intent-bar");
         bar.Dismiss();
         return $"visible, {probe.Width}x{probe.Height}px, summon {probe.SummonMs:0} ms, input focused: {probe.Focused}. Typing \"q3\" gave {probe.Results} result(s)" +
-               (probe.First.Length > 0 ? $" (first: {probe.First})" : "") + $". Drew: {probe.Texts}";
+               (probe.First.Length > 0 ? $" (first: {probe.First})" : "") + $". Drew: {probe.Texts}. Layout: {layout}";
     }
 
     private async Task<string> ChartWindowAsync()
@@ -100,9 +101,10 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Task.Delay(600);
         Expect(window.LoadStatus == "Success", $"the SVG chart loads (status: {window.LoadStatus})");
         Expect(window.PictureWidth > 50, $"the chart is laid out ({window.PictureWidth:0}px wide)");
+        var layout = Audit(window, "the chart window");
         await Shot("chart-window");
         window.Close();
-        return $"{render.Size.Width}x{render.Size.Height} chart, SVG {window.LoadStatus}, drawn {window.PictureWidth:0}px wide. {render.AltText}";
+        return $"{render.Size.Width}x{render.Size.Height} chart, SVG {window.LoadStatus}, drawn {window.PictureWidth:0}px wide. Layout: {layout}. {render.AltText}";
     }
 
     private async Task<string> AgentChartAsync()
@@ -138,9 +140,10 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         var widget = ui.Open.OfType<WidgetWindow>().FirstOrDefault();
         Expect(widget is not null, $"the widget window is open (said: {message})");
         Expect(System.Text.RegularExpressions.Regex.IsMatch(widget!.Text, @"\d{1,2}:\d\d"), $"the widget shows a live time (it shows: {widget.Text})");
+        var layout = Audit(widget, "the widget");
         await Shot("widget");
         ui.CloseAll();
-        return $"\"{message}\"; widget shows: {widget.Text}";
+        return $"\"{message}\"; widget shows: {widget.Text}. Layout: {layout}";
     }
 
     private async Task<string> InjectionAsync()
@@ -163,13 +166,14 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         Expect(drew.Contains("Leaves this PC", StringComparison.OrdinalIgnoreCase), "and it says it leaves this PC");
         Expect(services.Bar.Presence.Frame.State == ClaudeOS.Core.Presence.PresenceState.NeedsYou, $"the presence is waiting for the person (it is {services.Bar.Presence.Frame.State})");
 
+        var layout = Audit(card, "the approval card");
         await Shot("approval-planted-email");
         card.Close(); // the person says no
         var message = await run;
         Expect(message.Contains("Nothing changed", StringComparison.Ordinal), $"declining reports that nothing changed (said: {message})");
         Expect(!Directory.Exists(Path.Combine(_workspace, "reports")), "declining wrote nothing");
         Expect(Directory.GetFiles(Path.Combine(_workspace, "state", "outbox")).Length == 0, "declining sent nothing");
-        return "3 actions on the card, the planted recipient flagged, Esc/close declined, nothing written, nothing sent";
+        return $"3 actions on the card, the planted recipient flagged, Esc/close declined, nothing written, nothing sent. Layout: {layout}";
     }
 
     private async Task<string> ApprovalAsync()
@@ -206,11 +210,12 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         var asked = window.AskAsync();
         await Task.Delay(400);
         var text = Controls.TreeText.Of(window.Content, 6);
+        var layout = Audit(window, "the key window");
         await Shot("key-window");
         window.Close();
         await asked;
         Expect(text.Contains("Connect Claude", StringComparison.Ordinal), "the key window draws its title");
-        return text;
+        return $"{text}. Layout: {layout}";
     }
 
     private async Task<string> DeviceCheckAsync()
@@ -261,6 +266,14 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
             _failures++;
             Note($"FAIL  {name} ({clock.ElapsedMilliseconds} ms): {e.GetType().Name}: {e.Message}");
         }
+    }
+
+    /// <summary>Fail if anything in the window spills outside it; say how much scrolls or is trimmed.</summary>
+    private static string Audit(Microsoft.UI.Xaml.Window window, string name)
+    {
+        var result = Controls.LayoutAudit.Check(window.Content as Microsoft.UI.Xaml.FrameworkElement);
+        Expect(result.Problems.Count == 0, $"{name} has no layout spills: {string.Join("; ", result.Problems)}");
+        return result.Summary;
     }
 
     /// <summary>Save a picture of the screen as it is now, once things have settled.</summary>
