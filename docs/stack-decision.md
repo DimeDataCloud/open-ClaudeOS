@@ -124,6 +124,10 @@ adapter) ahead of time on Linux and running it:
   which Native AOT disables. Turning reflection back on does not fix it either:
   the SDK's converters for its immutable collections are trimmed away.
 
+(A Native AOT *publish* of the shell itself does compile in CI. It has not been run:
+it would hit the same SDK failure at the first Claude request, so there is no point
+until the SDK or the adapter changes.)
+
 So the shell ships as a self-contained MSIX on the regular .NET runtime. The
 Intent Bar is created once at start-up and only shown and hidden afterwards,
 which is what keeps hotkey-to-visible short; ReadyToRun compilation is the next
