@@ -118,8 +118,8 @@ internal sealed partial class ApprovalWindow : Window
         var desktop = WindowCatalog.Capture(_hwnd);
         var monitor = desktop.FocusMonitor;
         var width = (int)Math.Round(540 * monitor.Scale);
-        var rows = _model.Rows.Length;
-        var wanted = 190 + (rows * 64) + (_model.Diff.Length > 0 ? 190 : 0) + (_model.Rows.Any(r => !r.Quoted.IsEmpty) ? 120 : 0);
+        // Header and footer, then each row: its text, a line per policy note, and the quoted body if it leaves the PC.
+        var wanted = 230 + _model.Rows.Sum(r => 70 + (r.Notes.Length * 24) + (r.Denied is null ? 0 : 24) + (r.Quoted.IsEmpty ? 0 : 40 + (18 * Math.Min(r.Quoted.Length, 6)))) + (_model.Diff.Length > 0 ? 60 : 0);
         var height = (int)Math.Min(Math.Round(wanted * monitor.Scale), monitor.WorkArea.Height * 0.86);
         var x = monitor.WorkArea.X + ((monitor.WorkArea.Width - width) / 2);
         var y = monitor.WorkArea.Y + ((monitor.WorkArea.Height - height) / 3);
