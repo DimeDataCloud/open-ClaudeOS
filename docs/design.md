@@ -176,7 +176,9 @@ right from now on?"). Say "yes" and the usual approval card appears, one line,
 low risk. Approving writes an ordinary layout-rule mod, which the placer applies
 from then on and which you can read, edit or delete as a file. Say "no" and it
 does not ask again. Nothing is learned silently and nothing changes without that
-card.
+card. A rule is a preference, not a guarantee: the placer asks for that spot first,
+but it will not cover the window you are working in (in the CI picture of this
+feature the top right was taken by a terminal, so the chart went elsewhere).
 
 ## Accessibility
 
