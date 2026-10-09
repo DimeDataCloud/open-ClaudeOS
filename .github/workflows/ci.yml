@@ -26,6 +26,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
       - run: pytest -q
+      - name: Documentation links
+        if: matrix.python-version == '3.13'
+        run: python tools/check_links.py
 
   core:
     name: Core (.NET) on ${{ matrix.os }}
