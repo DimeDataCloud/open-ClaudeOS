@@ -226,7 +226,7 @@ public static class ChartRenderer
 
                 var height = Math.Max(1.0, bottom - top);
                 var isCap = !stacked || si == n - 1 || data.Series.Skip(si + 1).All(s => s.Points.All(q => Key(q.X) != Key(key)));
-                var color = SeriesColor(t, si, lone: n == 1);
+                var color = SeriesColor(t, si, lone: n == 1, data.Spec.SeriesColor);
                 svg.Append(BarPath(x, value >= 0 ? top : bottom - height, barW, height, isCap ? radius : 0, value >= 0, color));
                 var label = Fmt.Value(value, yFormat, compact: false);
                 marks.Add(new MarkInfo(new Rect((int)x, (int)top, (int)Math.Ceiling(barW), (int)Math.Ceiling(height)), data.Series[si].Name, Fmt.XLabel(key, data.XColumn, xKeys), label));
@@ -275,7 +275,7 @@ public static class ChartRenderer
         var pending = new List<(string Name, double Y, double X)>();
         foreach (var s in data.Series)
         {
-            var color = SeriesColor(t, seriesIndex, lone: data.Series.Length == 1);
+            var color = SeriesColor(t, seriesIndex, lone: data.Series.Length == 1, data.Spec.SeriesColor);
             var pts = new List<(double X, double Y, DataPoint P)>();
             var floors = new List<(double X, double Y)>();
             foreach (var p in s.Points)
@@ -352,7 +352,7 @@ public static class ChartRenderer
             foreach (var p in data.Series[si].Points)
             {
                 double cx = xPos(p.X), cy = yPos(p.Y);
-                svg.Append($"<circle cx=\"{N(cx)}\" cy=\"{N(cy)}\" r=\"4.5\" fill=\"{SeriesColor(t, si, lone: data.Series.Length == 1)}\" stroke=\"{surface}\" stroke-width=\"1.5\"/>");
+                svg.Append($"<circle cx=\"{N(cx)}\" cy=\"{N(cy)}\" r=\"4.5\" fill=\"{SeriesColor(t, si, lone: data.Series.Length == 1, data.Spec.SeriesColor)}\" stroke=\"{surface}\" stroke-width=\"1.5\"/>");
                 marks.Add(new MarkInfo(new Rect((int)cx - 8, (int)cy - 8, 16, 16), data.Series[si].Name, Fmt.XLabel(p.X, data.XColumn, xKeys), Fmt.Value(p.Y, yFormat, compact: false)));
             }
         }
@@ -380,8 +380,18 @@ public static class ChartRenderer
     /// <summary>A lone series wears the accent: it is the one place colour is free. Two or more series
     /// use the validated categorical palette in its fixed order, whatever the accent is, so a custom
     /// accent can never collide with another series.</summary>
-    private static string SeriesColor(ResolvedTheme t, int i, bool lone = false) =>
-        lone ? t.Hex("accent.mark") : t.Series[i % t.Series.Length];
+    private static string SeriesColor(ResolvedTheme t, int i, bool lone = false, string? chosen = null)
+    {
+        if (!lone)
+        {
+            return t.Series[i % t.Series.Length];
+        }
+
+        // "Make the bars blue": the person's colour, nudged only as far as needed to stay visible.
+        return chosen is not null && Rgba.TryParse(chosen, out var c)
+            ? ThemeResolver.DeriveAccent(c, t.Appearance).First(kv => kv.Key == "accent.mark").Value
+            : t.Hex("accent.mark");
+    }
 
     private static string DefaultTitle(ChartData d) => $"{d.Spec.Mark} chart of {d.Spec.Y.Field} by {d.Spec.X.Field}";
 

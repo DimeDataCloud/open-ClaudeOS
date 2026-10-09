@@ -199,6 +199,33 @@ public sealed class ChartTests
     }
 
     [Fact]
+    public void The_recipe_round_trips_through_its_compact_json()
+    {
+        var spec = ChartSpec.Parse(SpecJson(extra: ""","stack":false,"style":{"color":"#2A78D6"}"""));
+        var again = ChartSpec.Parse(ChartSpecJson.Write(spec));
+        Assert.Equal(spec.Transforms.Length, again.Transforms.Length);
+        Assert.Equal("#2A78D6", again.SeriesColor);
+        Assert.Equal(spec.Mark, again.Mark);
+        Assert.Equal(spec.Y.Format, again.Y.Format);
+        Assert.Equal(ChartSpecJson.Write(spec), ChartSpecJson.Write(again));
+    }
+
+    [Fact]
+    public void Make_the_bars_blue_sets_the_colour_and_keeps_it_visible_in_dark_mode()
+    {
+        var spec = ChartSpec.Parse(SpecJson(extra: ""","style":{"color":"#1F4FA3"}"""));
+        var data = Recipe.Run(spec, DataTable.FromCsv(Csv));
+        var light = ChartRenderer.Render(data, new ChartStyle(Light, 640, 380)).Svg;
+        Assert.DoesNotContain(Light.Hex("accent.mark"), light);
+        var dark = ThemeResolver.Resolve(Appearance.Dark);
+        var svg = ChartRenderer.Render(data, new ChartStyle(dark, 640, 380)).Svg;
+        // A dark blue on a dark surface is lifted until it reads (3:1), keeping its hue.
+        var fill = System.Text.RegularExpressions.Regex.Match(svg, "<path d=\"[^\"]*\" fill=\"(#[0-9A-F]{6})\"").Groups[1].Value;
+        Assert.True(Rgba.Parse(fill).ContrastOn(dark.Color("surface.raised")) >= 3.0, fill);
+        Assert.Throws<SpecException>(() => ChartSpec.Parse(SpecJson(extra: ""","style":{"color":"blueish"}""")));
+    }
+
+    [Fact]
     public void Bars_are_anchored_square_to_the_baseline_with_a_rounded_data_end()
     {
         var data = Recipe.Run(ChartSpec.Parse(SpecJson()), DataTable.FromCsv(Csv));

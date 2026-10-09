@@ -29,6 +29,13 @@
         <Setter Property="Foreground" Value="{ThemeResource CosInkPrimaryBrush}" />
     </Style>
 
+    <Style x:Key="CosMetricText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource CosFontDisplay}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource CosInkPrimaryBrush}" />
+    </Style>
+
     <Style x:Key="CosMonoText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource CosFontMono}" />
         <Setter Property="FontSize" Value="12" />
