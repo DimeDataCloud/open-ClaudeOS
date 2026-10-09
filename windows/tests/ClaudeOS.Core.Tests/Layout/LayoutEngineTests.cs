@@ -260,11 +260,19 @@ public sealed class LayoutEngineTests
             .Select(i => Win(i + 1, new Rect(i * 61 % 2400, i * 47 % 1500, 380 + i % 5 * 40, 300 + i % 3 * 50), active: i == 7))
             .ToArray();
         var desktop = Laptop(windows);
-        LayoutEngine.Place(desktop, new PlacementRequest(Chart)); // warm up
-        var clock = Stopwatch.StartNew();
-        var p = LayoutEngine.Place(desktop, new PlacementRequest(Chart));
-        clock.Stop();
-        Assert.True(clock.ElapsedMilliseconds < 100, $"took {clock.ElapsedMilliseconds} ms");
+        var p = LayoutEngine.Place(desktop, new PlacementRequest(Chart)); // warm up
+        // Guards against an accidental blow-up, not a slow machine: best of five, so a busy shared
+        // CI runner cannot fail it.
+        var best = long.MaxValue;
+        for (var run = 0; run < 5; run++)
+        {
+            var clock = Stopwatch.StartNew();
+            p = LayoutEngine.Place(desktop, new PlacementRequest(Chart));
+            clock.Stop();
+            best = Math.Min(best, clock.ElapsedMilliseconds);
+        }
+
+        Assert.True(best < 100, $"best of 5: {best} ms");
         Assert.True(Surface.WorkArea.Contains(p.Bounds));
     }
 }
