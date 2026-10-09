@@ -136,7 +136,7 @@ windows/src/ClaudeOS.Core    actions, policy, consent, undo, routing, layout, ch
 windows/src/ClaudeOS.Claude  the one place that talks to the Anthropic SDK
 windows/src/ClaudeOS.Cli     the same core on a terminal
 windows/src/ClaudeOS.Shell   the WinUI 3 app
-windows/tests                376 tests
+windows/tests                393 tests
 design/                      tokens (one source → CSS, XAML, C#), prototype, screenshots
 src/claudeos, tests/         the Python reference (Phase 0)
 ```
@@ -147,7 +147,7 @@ This is a pre-release. What has been verified, and by what:
 
 | | State |
 |---|---|
-| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 376 tests (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
+| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 393 tests (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
 | Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
 | Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
 | Windows shell | **Compiles for x64 and ARM64 in CI, packages as a signed MSIX, and in CI is installed on a Windows desktop and tests itself** (bar, chart, widget, approval card with a planted email, hold-to-approve). It has **not yet been run on a Surface**; expect polish bugs in how it looks and feels. That is milestone M0 |

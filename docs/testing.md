@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 376 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 393 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
@@ -80,6 +80,9 @@ What they pin down:
   `ModException`; the repository's example mods review cleanly; the prompt that teaches Claude
   to write formulas lists exactly the functions that exist. CI also publishes the CLI with
   Native AOT and runs `claudeos mod` on an example.
+- **Habits that survive a restart** (`Layout/HabitPersistenceTests`): a habit in progress keeps
+  counting across a restart, an offer already made is never repeated, saving is stable, and a
+  damaged, empty, hand-edited or random file gives a fresh tracker instead of an error.
 - **Presence** (`Presence/`): the state machine, driven event by event, including
   offline and reduced-motion behaviour.
 - **Prompt injection.** `Prompt_injection_in_a_file_is_data_the_policy_still_contains`
