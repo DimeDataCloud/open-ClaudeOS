@@ -100,7 +100,7 @@ milestone-0 targets on your hardware.
 |---|---|
 | Language, runtime | C# on .NET 10 |
 | Windows UI | WinUI 3 (Windows App SDK 2.5) for structure; Composition visuals for motion, so animation runs on the compositor; Win32 and DWM for frameless windows, rounded corners and acrylic |
-| Core | `ClaudeOS.Core`: zero dependencies, no UI, trim- and AOT-compatible |
+| Core | `ClaudeOS.Core`: zero dependencies, no UI, trim- and AOT-compatible (CI publishes it ahead of time and runs it) |
 | Claude | The official Anthropic C# SDK, in one project (`ClaudeOS.Claude`) behind `IModelClient` |
 | On-device models | Windows ML and the NPU for intent classification (designed; the grammar router covers common requests today) |
 | Packaging | Single-project MSIX, signed with a test certificate in CI |
@@ -133,7 +133,8 @@ This is a pre-release. What has been verified, and by what:
 | Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
 | Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
 | Windows shell | **Compiles for x64 and ARM64 in CI and packages as a signed MSIX.** It has **not yet been run on a device**; expect first-run polish bugs. That is milestone M0 |
-| NPU routing, OCR placement, Agent Launcher, Native AOT | Designed; M0 measures them. The device check says plainly what is not wired up yet |
+| NPU routing, Agent Launcher | Designed; M0 measures them. The device check says plainly what is not wired up yet |
+| Native AOT | **Core and CLI: verified** (CI publishes and runs the native binary). **Shell: no**: the official Anthropic SDK needs reflection-based JSON, so the shell ships ReadyToRun. [Details](docs/stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk) |
 | Scripted and web mods | Designed, deliberately refused until their sandboxes exist. Declarative mods (no code) work |
 
 Open decisions for the owner are in [HANDOFF.md](HANDOFF.md): the license is
