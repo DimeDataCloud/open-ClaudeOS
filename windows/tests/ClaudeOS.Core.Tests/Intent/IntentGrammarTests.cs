@@ -4,7 +4,7 @@ namespace ClaudeOS.Core.Tests.Intent;
 
 public sealed class IntentGrammarTests
 {
-    private static ClaudeOS.Core.Intent.Intent Parse(string text) => IntentGrammar.Parse(text).Intent;
+    private static UserIntent Parse(string text) => IntentGrammar.Parse(text).Intent;
 
     [Theory]
     [InlineData("open the Q3 budget", "q3 budget", null)]
@@ -126,7 +126,7 @@ public sealed class IntentGrammarTests
 
     private sealed class FakeCloud : ICloudIntentResolver
     {
-        public Task<ClaudeOS.Core.Intent.Intent> ResolveAsync(string text, CancellationToken ct = default) =>
-            Task.FromResult<ClaudeOS.Core.Intent.Intent>(new FindIntent(text, text));
+        public Task<UserIntent> ResolveAsync(string text, CancellationToken ct = default) =>
+            Task.FromResult<UserIntent>(new FindIntent(text, text));
     }
 }

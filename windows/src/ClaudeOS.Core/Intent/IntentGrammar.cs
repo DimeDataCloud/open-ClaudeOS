@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace ClaudeOS.Core.Intent;
 
-public sealed record GrammarResult(Intent Intent, bool Matched);
+public sealed record GrammarResult(UserIntent Intent, bool Matched);
 
 /// <summary>
 /// The zero-token path: a small, deterministic English grammar for the most common requests.
