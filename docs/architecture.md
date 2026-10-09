@@ -57,7 +57,7 @@ real inboxes and untrusted content. Each change and its reason is listed in
  │ encrypted   │  │ microVM         │  │ servers       │  │ (portals)    │
  └─────────────┘  └─────────────────┘  └───────────────┘  └──────────────┘
  ┌─────────────────────────────────────────────────────────────────────┐
- │ Stock Linux: kernel, Wayland compositor, xdg-desktop-portal, systemd │
+ │ Existing OS: Windows 11 ARM64 (Build 1), then Linux (Wayland, portals)│
  └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -144,4 +144,4 @@ management and rendering, not a model.
 | Artifacts replace app windows. | Artifacts are views over files in open formats. | Without that, generated work disappears with the session or gets locked into the system. |
 | Unified vector index over everything. | Scoped, encrypted, hybrid-search context service queried through tools. | One index over all files and conversations is a high-value target and pulls untrusted text into every prompt. |
 | Local model handles window positioning and UI actions under 100ms. | Deterministic code handles UI; the local model handles routing, classification and offline fallback. | Window management needs no model, and sub-16ms rendering can't wait on token generation. |
-| Base layer: lightweight Linux or microkernel. | Stock Linux first; the "OS" is a shell plus system services. A distro image comes last. | Building a kernel or distro first delays the part that is new: the intent and consent loop. |
+| Base layer: lightweight Linux or microkernel. | An app layer on an existing OS first: Windows 11 ARM64 for the first test build, then Linux. A distro image comes last. | Building a kernel or distro first delays the part that is new: the intent and consent loop. |

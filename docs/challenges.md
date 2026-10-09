@@ -219,7 +219,7 @@ of release testing from Phase 3.
 ### 4.2 Offline use
 
 **Plan: degrade in clear tiers**
-1. Everything deterministic works offline: it is still a normal Linux desktop.
+1. Everything deterministic works offline: it is still a normal desktop.
    Plans, approvals, undo and the audit log are all local.
 2. A local model handles routing, simple intents and search over the local
    index.
@@ -248,11 +248,12 @@ For an open-source project, no single vendor should be required.
 
 ### 5.2 Hardware drivers
 
-**Plan: don't write an OS from scratch.** Ship on a mainstream distribution
-(Fedora, Ubuntu or NixOS) and get its drivers. The order is: an app on an
-existing desktop, then a desktop session, then an optional distribution image.
-The orchestration core is portable, so a later macOS or Windows version would
-run as an app layer with less integration.
+**Plan: don't write an OS from scratch.** Run on an existing OS and use its
+drivers. The first test build is an app layer on Windows 11 ARM64 (a Surface
+Pro), so drivers are Windows' job. On Linux the order is: an app on an
+existing desktop, then a desktop session, then an optional image built on a
+mainstream distribution (Fedora, Ubuntu or NixOS). The orchestration core is
+portable across all of these.
 
 ---
 
@@ -288,7 +289,10 @@ inference.
 ### 6.3 Platform lock-in
 
 **Plan**
-- **Linux first**, where no platform owner can restrict deep integration.
+- **A portable core.** The first test build runs on Windows, inside
+  Microsoft's rules (it cannot replace the Windows shell). Keeping the core
+  free of platform code keeps Linux, where no platform owner can restrict
+  deep integration, a real option.
 - **Open standards:** MCP for tools, Wayland and freedesktop portals for
   desktop integration, open file formats for everything generated.
 - **No single model vendor** (see 4.2).
