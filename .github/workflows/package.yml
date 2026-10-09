@@ -1,0 +1,114 @@
+name: Package (Windows)
+
+# Builds an installable, test-signed MSIX for ARM64 (the Surface) and x64, and probes whether a
+# Native AOT publish works. Nothing here runs the app; see docs/testing.md for the on-device script.
+#
+# Signing: if the repository has the secrets CLAUDEOS_TEST_PFX_BASE64 and CLAUDEOS_TEST_PFX_PASSWORD
+# (made with tools/New-TestCertificate.ps1) that certificate signs the package, so you trust its .cer
+# once. Otherwise a throwaway certificate is made for this run and its .cer is published next to the
+# package. The private key never leaves the runner and is never in the repository.
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  msix:
+    name: MSIX (${{ matrix.platform }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ARM64, x64]
+    env:
+      PFX_BASE64: ${{ secrets.CLAUDEOS_TEST_PFX_BASE64 }}
+      PFX_PASSWORD: ${{ secrets.CLAUDEOS_TEST_PFX_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Signing certificate
+        id: cert
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "cert"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          if ($env:PFX_BASE64 -and $env:PFX_PASSWORD) {
+            [IO.File]::WriteAllBytes((Join-Path $dir "claudeos-test.pfx"), [Convert]::FromBase64String($env:PFX_BASE64))
+            $password = $env:PFX_PASSWORD
+            $cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $dir "claudeos-test.pfx"), $password)
+            [IO.File]::WriteAllBytes((Join-Path $dir "claudeos-test.cer"), $cert.Export("Cert"))
+            "mode=repository secret (stable signature)" >> $env:GITHUB_OUTPUT
+          } else {
+            $password = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
+            Write-Host "::add-mask::$password"
+            ./tools/New-TestCertificate.ps1 -OutDir $dir -Password (ConvertTo-SecureString $password -AsPlainText -Force) | Out-Null
+            "mode=throwaway certificate (new .cer every run)" >> $env:GITHUB_OUTPUT
+          }
+          "PFX_PATH=$(Join-Path $dir 'claudeos-test.pfx')" >> $env:GITHUB_ENV
+          "SIGN_PASSWORD=$password" >> $env:GITHUB_ENV
+          "CER_PATH=$(Join-Path $dir 'claudeos-test.cer')" >> $env:GITHUB_ENV
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:GITHUB_WORKSPACE "out"
+          msbuild windows/src/ClaudeOS.Shell/ClaudeOS.Shell.csproj /restore /v:minimal "/flp:logfile=package-errors.log;errorsonly" `
+            /p:Configuration=Release /p:Platform=${{ matrix.platform }} `
+            /p:GenerateAppxPackageOnBuild=true /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly `
+            "/p:AppxPackageDir=$out\" `
+            /p:AppxPackageSigningEnabled=true "/p:PackageCertificateKeyFile=$env:PFX_PATH" "/p:PackageCertificatePassword=$env:SIGN_PASSWORD"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item $env:CER_PATH $out
+          Get-ChildItem $out -Recurse -Include *.msix, *.cer | ForEach-Object { Write-Host $_.FullName }
+
+      - name: What went wrong
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path package-errors.log) {
+            Get-Content package-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 25
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-ClaudeOS-${{ matrix.platform }}
+          path: |
+            out/**/*.msix
+            out/**/*.cer
+          if-no-files-found: error
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          "### open-ClaudeOS ${{ matrix.platform }} package`n`nSigned with: ${{ steps.cert.outputs.mode }}`n`nInstall: trust the .cer once (Local Machine > Trusted People), then open the .msix. See docs/testing.md." >> $env:GITHUB_STEP_SUMMARY
+
+  aot-probe:
+    name: Native AOT probe
+    runs-on: windows-latest
+    # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist and may not
+    # work yet. The result is written to the run summary.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish with Native AOT
+        id: aot
+        shell: pwsh
+        run: |
+          dotnet publish windows/src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -r win-x64 -p:Platform=x64 -p:PublishAot=true -p:WindowsPackageType=None -v:minimal "-flp:logfile=aot-errors.log;errorsonly"
+          $ok = ($LASTEXITCODE -eq 0)
+          "### Native AOT publish (win-x64)`n`nResult: $(if ($ok) { 'worked' } else { 'did not work yet' })" >> $env:GITHUB_STEP_SUMMARY
+          if (-not $ok -and (Test-Path aot-errors.log)) {
+            "`n``````n$((Get-Content aot-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 15) -join "`n")`n``````" >> $env:GITHUB_STEP_SUMMARY
+          }
+          exit $LASTEXITCODE
