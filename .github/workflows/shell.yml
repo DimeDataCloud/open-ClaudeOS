@@ -36,5 +36,5 @@ jobs:
         shell: pwsh
         run: |
           if (Test-Path shell-errors.log) {
-            Get-Content shell-errors.log | ForEach-Object { ($_ -replace '^.*\\windows\\', '') -replace '\[D:\\a.*$', '' } | Sort-Object -Unique | Select-Object -First 25
+            Get-Content shell-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\windows\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 25
           }

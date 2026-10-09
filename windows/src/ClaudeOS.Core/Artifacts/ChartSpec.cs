@@ -59,6 +59,11 @@ public sealed record ChartSpec(
 
     public static ChartSpec Parse(JsonElement e)
     {
+        if (e.ValueKind == JsonValueKind.Object && e.TryGetProperty("spec", out var wrapped) && !e.TryGetProperty("mark", out _))
+        {
+            e = wrapped; // tolerate {"spec": {...}}
+        }
+
         Require(e.ValueKind == JsonValueKind.Object, "chart spec must be an object");
         var allowed = new HashSet<string> { "type", "title", "data", "transform", "mark", "x", "y", "color", "stack" };
         var unknown = e.EnumerateObject().Select(p => p.Name).Where(n => !allowed.Contains(n)).Order().ToList();
