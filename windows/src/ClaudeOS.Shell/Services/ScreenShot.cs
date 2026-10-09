@@ -9,9 +9,26 @@ namespace ClaudeOS.Shell.Services;
 /// all) and saves it as a PNG. Only the self-test uses it, so a CI run can show what the shell
 /// looks like and not just that it ran.
 /// </summary>
-internal static unsafe class ScreenShot
+internal static class ScreenShot
 {
     public static async Task SaveAsync(string path)
+    {
+        var (width, height, pixels) = Grab();
+        using var stream = new InMemoryRandomAccessStream();
+        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)width, (uint)height, 96, 96, pixels);
+        await encoder.FlushAsync();
+        stream.Seek(0);
+        var bytes = new byte[stream.Size];
+        using var reader = new DataReader(stream);
+        await reader.LoadAsync((uint)stream.Size);
+        reader.ReadBytes(bytes);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllBytesAsync(path, bytes);
+    }
+
+    /// <summary>The unsafe part, kept synchronous so the async method above stays safe code.</summary>
+    private static unsafe (int Width, int Height, byte[] Pixels) Grab()
     {
         var width = Native.GetSystemMetrics(0);
         var height = Native.GetSystemMetrics(1);
@@ -36,17 +53,7 @@ internal static unsafe class ScreenShot
                 Native.GetDIBits(memory, bitmap, 0, (uint)height, p, &info, 0);
             }
 
-            using var stream = new InMemoryRandomAccessStream();
-            var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-            encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)width, (uint)height, 96, 96, pixels);
-            await encoder.FlushAsync();
-            stream.Seek(0);
-            var bytes = new byte[stream.Size];
-            using var reader = new DataReader(stream);
-            await reader.LoadAsync((uint)stream.Size);
-            reader.ReadBytes(bytes);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            await File.WriteAllBytesAsync(path, bytes);
+            return (width, height, pixels);
         }
         finally
         {
