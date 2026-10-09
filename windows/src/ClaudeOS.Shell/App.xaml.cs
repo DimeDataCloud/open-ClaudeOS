@@ -106,7 +106,7 @@ internal sealed class AppServices
         var files = new FileIndex();
         var presence = new PresenceMachine(reducedMotion: reducedMotion);
         var placer = new Placer(state);
-        var habits = new HabitService(presence);
+        var habits = new HabitService(presence, Path.Combine(state.Path, "habits.json"));
         return new AppServices
         {
             State = state,

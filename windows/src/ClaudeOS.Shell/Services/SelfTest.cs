@@ -125,6 +125,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
     /// </summary>
     private async Task<string> HabitAsync()
     {
+        services.Habits.Isolate(); // start from nothing, and never write over the person's saved habits
         var agent = MakeAgent();
         var realAgent = services.Bar.Agent;
         var realRules = services.Placer.Rules;
