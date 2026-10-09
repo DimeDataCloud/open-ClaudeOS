@@ -30,6 +30,7 @@ internal sealed partial class ApprovalWindow : Window
     private readonly Stopwatch _held = new();
     private readonly nint _hwnd;
     private bool _answered;
+    private bool _closed;
 
     public ApprovalWindow(ApprovalModel model)
     {
@@ -55,7 +56,11 @@ internal sealed partial class ApprovalWindow : Window
         _holdTimer.Tick += OnHoldTick;
 
         Decline.Click += (_, _) => Answer(false);
-        Closed += (_, _) => Answer(false);
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            Answer(false); // closing the window by any route means no
+        };
 
         // A plain click approves things that stay on this PC. Holding is for things that leave it, so
         // the button's own Click is ignored there; pointer and key events are watched even though
@@ -307,6 +312,9 @@ internal sealed partial class ApprovalWindow : Window
         _answered = true;
         _holdTimer.Stop();
         _answer.TrySetResult(approved);
-        Close(); // Closed calls Answer again, which is a no-op now.
+        if (!_closed)
+        {
+            Close(); // when this was reached from Closed, the window is already gone
+        }
     }
 }
