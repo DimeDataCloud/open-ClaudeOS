@@ -95,6 +95,33 @@ public sealed record Plan(string Intent, string Summary, ImmutableArray<PlanActi
         return new Plan(intent, summary, parsed.ToImmutable());
     }
 
+    /// <summary>Builds a plan from a model's <c>submit_plan</c> arguments. Only <c>summary</c> and
+    /// <c>actions</c> are read: the model cannot rewrite the person's intent.</summary>
+    public static Plan FromToolInput(JsonElement input, string intent)
+    {
+        using var stream = new MemoryStream();
+        using (var w = new Utf8JsonWriter(stream))
+        {
+            w.WriteStartObject();
+            if (input.TryGetProperty("summary", out var summary))
+            {
+                w.WritePropertyName("summary");
+                summary.WriteTo(w);
+            }
+
+            if (input.TryGetProperty("actions", out var actions))
+            {
+                w.WritePropertyName("actions");
+                actions.WriteTo(w);
+            }
+
+            w.WriteEndObject();
+        }
+
+        using var doc = JsonDocument.Parse(stream.ToArray());
+        return Parse(doc.RootElement, intent);
+    }
+
     public static Plan Parse(string json, string intent = "")
     {
         try
