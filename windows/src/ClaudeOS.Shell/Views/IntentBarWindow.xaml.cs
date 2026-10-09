@@ -33,6 +33,7 @@ internal sealed partial class IntentBarWindow : Window
     private readonly ObservableCollection<BarResult> _results = [];
     private readonly nint _hwnd;
     private bool _shownOnce;
+    private bool _summoned;
     private Stopwatch? _summonClock;
 
     public IntentBarWindow(BarController bar)
@@ -72,13 +73,19 @@ internal sealed partial class IntentBarWindow : Window
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, async () =>
         {
             await Task.Delay(250);
-            AppWindow.Hide();
+            if (!_summoned)
+            {
+                // Only hide the off-screen warm-up. If the person already pressed the hotkey, the bar is theirs now.
+                AppWindow.Hide();
+            }
+
             _shownOnce = true;
         });
     }
 
     public void Summon()
     {
+        _summoned = true;
         _summonClock = Stopwatch.StartNew();
         var previous = Native.GetForegroundWindow();
         if (previous != _hwnd)
