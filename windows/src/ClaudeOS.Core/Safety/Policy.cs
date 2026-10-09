@@ -283,8 +283,17 @@ internal static class Glob
                     break;
                 case '[':
                     {
-                        var close = p.IndexOf(']');
-                        if (close > 1 && !s.IsEmpty)
+                        // Like fnmatch: an optional '!' and then a ']' that comes first are members of
+                        // the set, not its end; with no closing ']' the '[' is an ordinary character.
+                        var first = p.Length > 1 && p[1] == '!' ? 2 : 1;
+                        if (first < p.Length && p[first] == ']')
+                        {
+                            first++;
+                        }
+
+                        var close = first < p.Length ? p[first..].IndexOf(']') : -1;
+                        close = close < 0 ? -1 : close + first;
+                        if (close > 0 && !s.IsEmpty)
                         {
                             var set = p[1..close];
                             var negate = set.Length > 0 && set[0] == '!';

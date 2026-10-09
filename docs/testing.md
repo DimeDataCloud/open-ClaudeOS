@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 426 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 434 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
@@ -115,6 +115,16 @@ What they pin down:
   policy: each must be denied or land inside the workspace with no protected part. Writing these
   found two real gaps (a path with a NUL character crashed instead of being refused, and on
   Linux a backslash name was accepted although Windows would read it as a separator); both are fixed.
+- **The protected-name glob against Python's `fnmatch`** (`Safety/GlobDifferentialTests`): 6,000
+  random name and pattern pairs (about a third of them matches), generated once by Python and kept
+  in `fixtures/glob-cases.json`, must agree. The first run found one real divergence (a `]` placed
+  first in a character set), now fixed. `Safety/PolicyRefusalTests` pins the refusals that keep a
+  plan from writing onto a folder, past the size limit, or deleting or moving what is not there.
+- **Coverage.** `dotnet test --collect:"XPlat Code Coverage"` reports about 91% of the hand-written
+  core lines (90.8% for `ClaudeOS.Core`, 77.9% for the SDK adapter) exercised; the gaps are mostly
+  error paths and platform-specific branches. The throughput guard on ranking 10,000 files can fail
+  under coverage instrumentation, which slows everything; it is a guard against a blow-up, not a
+  benchmark.
 - **Making things is not gated; changing things is.** `New_files_apply_straight_away_with_undo_and_nothing_else_does`
   pins the rule that only new-file creations skip the card.
 
