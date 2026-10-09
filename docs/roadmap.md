@@ -20,22 +20,24 @@ each item.
 
 ## Phase 0.5: open-source foundations
 
-- Choose a license and settle the project name
-- `CONTRIBUTING.md`, code of conduct, `SECURITY.md` with private reporting
-- CI: tests, lint, and the injection corpus as a required check
-- Define the trusted core (policy, consent, executor, sandbox) and its review rules
+- [x] License: Apache-2.0 ([LICENSE](../LICENSE), [NOTICE](../NOTICE)); the name is still open
+- [x] [CONTRIBUTING](../CONTRIBUTING.md), [code of conduct](../CODE_OF_CONDUCT.md), [SECURITY](../SECURITY.md) with private reporting
+- [x] CI: Python and .NET tests on Linux and Windows, the Windows shell compiled for x64 and ARM64, a signed MSIX, a token-drift check
+- [ ] The injection corpus as a required check (one case exists in the planner tests; it should grow into a corpus)
+- [x] The trusted core is `ClaudeOS.Core/Safety`; changes to it are reviewed against [CONTRIBUTING](../CONTRIBUTING.md)
 
 **Exit test:** a newcomer can clone, run the demo and open a pull request
 using only the repository docs, and security reports have a private channel.
 
-## Build 1: Windows on ARM test build (next)
+## Build 1: Windows on ARM test build (in progress)
 
 An app layer on Windows 11 ARM64: Intent Bar, instant file opening placed in
 free screen space, subject-only windows for generated charts, reports,
 diagrams and images, mods, and the Phase 0 safety core. Full plan, stack
 choice and milestones (M0 to M4): [windows-arm64-plan.md](windows-arm64-plan.md).
 
-**Exit test:** the Surface test checklist in that plan passes.
+**Exit test:** the Surface test checklist in that plan passes. Per-milestone
+status is in [windows-arm64-plan.md](windows-arm64-plan.md#where-each-milestone-stands).
 
 ## Phase 1: real effects, still in the terminal
 
@@ -99,7 +101,7 @@ in a test suite of app updates and pop-ups.
 
 - **Name.** "Claude" is an Anthropic trademark; a public project needs
   permission or a different name.
-- **License.** Apache-2.0 recommended; not yet chosen.
+- **License.** Apache-2.0, taken as the recommended default so the project can be shared; the owner can still change it before a first release.
 - **Local model** for routing and offline use, and the hardware floor.
 - **Fast classifiers** (such as the Jev model under review) as advisory risk
   signals: whether they help, and where they must not be used.

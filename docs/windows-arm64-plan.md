@@ -354,6 +354,19 @@ way.
 | **M3: mods** | Manifest format; declarative, scripted and web levels; capabilities; widget, artifact-type, command, layout-rule and theme mods; "make me a mod" flow | You can create, tweak, disable and remove a mod by asking |
 | **M4: safe changes** | The Phase 0 core in C#: approval cards, plan-bound grants, undo journal, Recycle Bin deletes, dry-run outbox | The invoice injection demo is contained on Windows |
 
+### Where each milestone stands
+
+Updated 2026-10-09. "Built" means written and, where it can be, tested; the
+shell's behaviour on a device is only confirmed by running it (M0).
+
+| Milestone | Built | Not yet |
+|---|---|---|
+| M0: spike | Packaged MSIX built and test-signed by CI for ARM64 and x64. Tray icon and global hotkey. Frameless popups with DWM corners and acrylic. Window listing with true bounds, free-space computation and moving windows. Windows OCR availability check. A **Check this device** report that measures the targets below. | Everything on a device. NPU classifier through Windows ML. Agent Launcher registration. Copilot-key assignment. Native AOT (a CI job probes it and reports). |
+| M1: open anything | Intent Bar; grammar router; file index with ranked fuzzy search; open with placement; layout engine (free space, shrink, float, make room, put it back, suggest-only habits); 40+ layout tests. | Windows Search index as the first source; native viewers and preview handlers inside subject windows. |
+| M2: make things | Claude planner and artifact maker on the official SDK; scoped read-only tools; data profile instead of data; chart recipes run locally over every row; SVG renderer from design tokens; chart subject window with "Edit with Claude"; artifacts saved as files with undo. | Report, table and diagram artifacts; on-device routing. |
+| M3: mods | Strict manifest; declarative level; capability broker checked on every read; approval bound to the manifest digest; widget windows with live providers (clock, battery, CPU and memory, recent files, window count); "make me a mod" flow. | Scripted (Jint) and web levels, deliberately refused for now; theme, command and layout-rule mods are parsed and applied in the core, but the shell does not load them yet; calendar provider. |
+| M4: safe changes | The Phase 0 core in C# with byte-identical digests; approval window with hold-to-approve; undo through the bar ("undo"); dry-run outbox. | Recycle Bin deletes; real connectors behind the outbox. |
+
 Build 1 is M0 through M4. The protected-path and scoped-read rules from Phase
 0 are in from M2, because that is when Claude starts reading files.
 
