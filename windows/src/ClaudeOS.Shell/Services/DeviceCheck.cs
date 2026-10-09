@@ -47,9 +47,9 @@ internal static class DeviceCheck
         readings.Add(new("Files indexed", filesIndexed.ToString(System.Globalization.CultureInfo.InvariantCulture)));
 
         readings.Add(new("Windows OCR", OcrAvailable(), null));
-        readings.Add(new("Intent model on the NPU", "not wired into this build yet; the grammar router answers common requests locally"));
-        readings.Add(new("Agent Launcher registration", "not wired into this build yet"));
-        readings.Add(new("Native AOT publish", "built by the Shell workflow, not by this app"));
+        readings.Add(new("Intent model on the NPU", "not wired in yet; the local grammar answers common requests"));
+        readings.Add(new("Agent Launcher registration", "not wired in yet"));
+        readings.Add(new("Native AOT publish", "checked in CI, not by this app"));
         return readings;
     }
 
@@ -93,7 +93,7 @@ internal static class DeviceCheck
             var engine = Windows.Media.Ocr.OcrEngine.TryCreateFromUserProfileLanguages();
             return engine is null
                 ? "no OCR language pack installed"
-                : $"available ({engine.RecognizerLanguage.DisplayName}); {Windows.Media.Ocr.OcrEngine.AvailableRecognizerLanguages.Count} languages";
+                : $"available: {engine.RecognizerLanguage.DisplayName} ({Windows.Media.Ocr.OcrEngine.AvailableRecognizerLanguages.Count} installed)";
         }
         catch (Exception e) when (e is COMException or InvalidOperationException)
         {

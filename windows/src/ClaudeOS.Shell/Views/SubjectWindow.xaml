@@ -7,7 +7,7 @@
 
     <!-- The subject and nothing else: no title bar, no toolbar, no tags. -->
     <Grid x:Name="Root" Background="{ThemeResource CosSurfaceRaisedBrush}">
-        <Image x:Name="Picture" Stretch="Uniform" />
+        <Viewbox x:Name="Picture" Stretch="Uniform" Margin="0" />
 
         <!-- Only while Claude is changing this window: the presence, and what it is doing. -->
         <Border x:Name="Busy" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,14"
