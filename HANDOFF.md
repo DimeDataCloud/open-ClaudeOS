@@ -65,8 +65,9 @@ You asked for no questions, so these defaults were taken; each is easy to change
    credential store, not a file. Then try the walk-through's chart and plan steps;
    this is the first contact between the prompts and the live API, so expect to tune
    them.
-5. **Pull request base.** Create `main` from the first commit (or rename this branch
-   to `main` on GitHub), then open a PR from the working branch.
+5. **Pull request.** `main` did not exist, so it was created at `f2ea2a3` (the commit before this
+   build started) and a draft PR (#1) was opened from the working branch. Review it, and
+   change the base or the default branch if you prefer another arrangement.
 
 ## What is next
 
