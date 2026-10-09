@@ -124,9 +124,14 @@ adapter) ahead of time on Linux and running it:
   which Native AOT disables. Turning reflection back on does not fix it either:
   the SDK's converters for its immutable collections are trimmed away.
 
-(A Native AOT *publish* of the shell itself does compile in CI. It has not been run:
-it would hit the same SDK failure at the first Claude request, so there is no point
-until the SDK or the adapter changes.)
+(A Native AOT *publish* of the shell itself does compile in CI. Re-run on 2026-10-09 from
+the *Package (Windows)* workflow's on-demand probe, at `4647a75` for `win-x64`: it published in
+about three minutes with no errors. The warnings were the SDK's own (`IL2104` and `IL3053`
+on `Anthropic.dll`, the same ones that predict the runtime failure above), `CsWinRT1028`
+(`PresenceOrb` is not marked `partial`), and two ordinary compiler warnings, `CS0252` in
+`IntentBarWindow.xaml.cs` and `CS8602` in `SelfTest.cs`. The result was not run: it would
+hit the same SDK failure at the first Claude request, so there is no point until the SDK or
+the adapter changes. "It builds" is not "it works".)
 
 So the shell ships as a self-contained MSIX on the regular .NET runtime. The
 Intent Bar is created once at start-up and only shown and hidden afterwards,
