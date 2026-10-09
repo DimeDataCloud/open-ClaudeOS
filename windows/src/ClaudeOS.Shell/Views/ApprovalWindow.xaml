@@ -34,11 +34,11 @@
                 <TextBlock x:Name="RiskLine" Style="{StaticResource CosCaptionText}" TextWrapping="Wrap" MaxWidth="250" />
             </StackPanel>
 
-            <Button x:Name="Decline" Grid.Column="1" Content="Not now" Style="{StaticResource CosQuietButton}"
+            <Button x:Name="Decline" Grid.Column="1" Content="Not now" MinHeight="44" Style="{StaticResource CosQuietButton}"
                     AutomationProperties.Name="Decline. Nothing will change." />
 
             <!-- Approve: a plain press for things that stay on this PC, a deliberate hold for things that leave it. -->
-            <Button x:Name="ApproveHost" Grid.Column="2" MinWidth="132" Height="38" Padding="0"
+            <Button x:Name="ApproveHost" Grid.Column="2" MinWidth="132" Height="44" Padding="0"
                     HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                     Style="{StaticResource CosPrimaryButton}"
                     AutomationProperties.AutomationId="Approve">

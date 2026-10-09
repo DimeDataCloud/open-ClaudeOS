@@ -26,7 +26,7 @@ internal sealed partial class ApprovalWindow : Window
 
     private readonly ApprovalModel _model;
     private readonly TaskCompletionSource<bool> _answer = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly DispatcherQueueTimer _holdTimer;
+    private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _holdTimer;
     private readonly Stopwatch _held = new();
     private readonly nint _hwnd;
     private bool _answered;
@@ -276,7 +276,7 @@ internal sealed partial class ApprovalWindow : Window
         HoldFill.Width = 0;
     }
 
-    private void OnHoldTick(DispatcherQueueTimer sender, object args)
+    private void OnHoldTick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
     {
         var fraction = Math.Clamp(_held.Elapsed.TotalMilliseconds / HoldTime.TotalMilliseconds, 0, 1);
         HoldFill.Width = ApproveHost.ActualWidth * fraction;
