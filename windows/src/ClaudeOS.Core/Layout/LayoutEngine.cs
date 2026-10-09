@@ -98,7 +98,7 @@ public static class LayoutEngine
             switch (method)
             {
                 case PlacementMethod.OverBackground when !tablet:
-                    if (FloatOverBackground(area, request, obstacles, active) is { } over)
+                    if (FloatOverBackground(area, request, obstacles, active, options.MinShrink) is { } over)
                     {
                         return new Placement(over, method, monitor.Id, [], "no free space; floating over a background window, the active window stays visible");
                     }
@@ -231,9 +231,24 @@ public static class LayoutEngine
 
     /// <summary>Floats at the preferred corner, over background windows only. The result must not
     /// touch the active window, so what you are working on is never covered.</summary>
-    private static Rect? FloatOverBackground(Rect area, PlacementRequest request, IReadOnlyList<WindowInfo> windows, WindowInfo? active)
+    private static Rect? FloatOverBackground(Rect area, PlacementRequest request, IReadOnlyList<WindowInfo> windows, WindowInfo? active, double minShrink)
     {
-        var size = FitInto(request.Desired, area);
+        // Try the full size first, then smaller: a slightly smaller window that leaves the active
+        // one alone beats making room by moving it.
+        foreach (var scale in ShrinkSteps(minShrink))
+        {
+            var size = FitInto(Scale(request.Desired, scale, request.Minimum), area);
+            if (FloatOverBackground(area, request, size, windows, active) is { } rect)
+            {
+                return rect;
+            }
+        }
+
+        return null;
+    }
+
+    private static Rect? FloatOverBackground(Rect area, PlacementRequest request, Size size, IReadOnlyList<WindowInfo> windows, WindowInfo? active)
+    {
         var corners = new[]
         {
             (new Rect(area.Right - size.Width, area.Y, size.Width, size.Height), Anchor.TopRight),

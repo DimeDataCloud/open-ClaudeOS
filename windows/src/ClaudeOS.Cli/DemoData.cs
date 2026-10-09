@@ -49,8 +49,11 @@ internal static class DemoData
         return dir ?? Directory.GetCurrentDirectory();
     }
 
+    private static readonly List<(string Key, ClaudeOS.Core.Layout.Size Size)> D_Charts = [];
+
     private static void WriteCharts(Utf8JsonWriter w, string repo)
     {
+        D_Charts.Clear();
         var dir = Path.Combine(repo, "examples", "charts");
         var table = DataTable.FromCsv(File.ReadAllText(Path.Combine(dir, "q3-budget.csv")));
         w.WriteStartObject("charts");
@@ -59,6 +62,7 @@ internal static class DemoData
             var spec = ChartSpec.Parse(File.ReadAllText(Path.Combine(dir, $"{name}.chart.json")));
             var data = Recipe.Run(spec, table);
             var size = ChartRenderer.PreferredSize(data);
+            D_Charts.Add((name, size));
             w.WriteStartObject(name);
             w.WriteNumber("width", size.Width);
             w.WriteNumber("height", size.Height);
@@ -78,29 +82,35 @@ internal static class DemoData
 
     private static void WriteLayouts(Utf8JsonWriter w)
     {
-        // The Surface Pro at 200%: 2880x1920 with an 80px taskbar. Expressed in device-independent
-        // pixels (÷2) the prototype's desktop is 1440x920.
-        var surface = new MonitorInfo("surface", new Rect(0, 0, 2880, 1840), 2.0, true);
+        // The Surface Pro at 200%: 2880x1920 physical pixels, an 80px taskbar, so the work area is
+        // 2880x1840. The prototype's stage is the same desktop in device-independent pixels (1440x960).
+        const double scale = 2.0;
+        var surface = new MonitorInfo("surface", new Rect(0, 0, 2880, 1840), scale, true);
         WindowInfo Win(long h, string title, Rect r, bool active = false, bool maximized = false) => new(h, title, "app.exe", r, "surface", active, IsMaximized: maximized);
-        var scenarios = new (string Name, Desktop Desktop, Size Desired)[]
+        var scenarios = new (string Name, Desktop Desktop)[]
         {
-            ("empty", new Desktop([surface], [], "surface"), new Size(840, 560)),
-            ("one-app", new Desktop([surface], [Win(1, "Notes", new Rect(0, 0, 1700, 1840), active: true)], "surface"), new Size(840, 560)),
-            ("maximized", new Desktop([surface], [Win(1, "Notes", surface.WorkArea, active: true, maximized: true)], "surface"), new Size(840, 560)),
-            ("snapped", new Desktop([surface], [Win(1, "Notes", new Rect(16, 16, 1420, 1808), active: true), Win(2, "Browser", new Rect(1444, 16, 1420, 1808))], "surface"), new Size(840, 560)),
+            ("empty", new Desktop([surface], [], "surface")),
+            ("one-app", new Desktop([surface], [Win(1, "Notes", new Rect(0, 0, 1700, 1840), active: true)], "surface")),
+            ("maximized", new Desktop([surface], [Win(1, "Notes", surface.WorkArea, active: true, maximized: true)], "surface")),
+            ("snapped", new Desktop([surface], [Win(1, "Notes", new Rect(16, 16, 1420, 1808), active: true), Win(2, "Browser", new Rect(1444, 16, 1420, 1808))], "surface")),
         };
 
-        w.WriteStartObject("layouts");
-        w.WriteNumber("scale", 2.0);
-        w.WriteStartObject("desktop");
-        w.WriteNumber("width", 2880);
-        w.WriteNumber("height", 1920);
-        w.WriteNumber("work", 1840);
-        w.WriteEndObject();
-        w.WriteStartArray("scenarios");
-        foreach (var (name, desktop, desired) in scenarios)
+        // What gets placed, in device-independent pixels. Chart sizes come from the renderer.
+        var contents = new List<(string Key, ClaudeOS.Core.Layout.Size Dips, Anchor Anchor)>
         {
-            var placement = LayoutEngine.Place(desktop, new PlacementRequest(desired));
+            ("sheet", new ClaudeOS.Core.Layout.Size(760, 500), Anchor.Auto),
+            ("widget", new ClaudeOS.Core.Layout.Size(220, 90), Anchor.TopRight),
+        };
+        foreach (var chart in D_Charts)
+        {
+            contents.Add((chart.Key, chart.Size, Anchor.Auto));
+        }
+
+        w.WriteStartObject("layouts");
+        w.WriteNumber("scale", scale);
+        w.WriteStartArray("scenarios");
+        foreach (var (name, desktop) in scenarios)
+        {
             w.WriteStartObject();
             w.WriteString("name", name);
             w.WriteStartArray("windows");
@@ -114,20 +124,30 @@ internal static class DemoData
             }
 
             w.WriteEndArray();
-            WriteRect(w, "placed", placement.Bounds);
-            w.WriteString("method", placement.Method.ToString());
-            w.WriteString("reason", placement.Reason);
-            w.WriteStartArray("moves");
-            foreach (var m in placement.Moves)
+            w.WriteStartObject("placements");
+            foreach (var (key, dips, anchor) in contents)
             {
-                w.WriteStartObject();
-                w.WriteString("title", desktop.Windows.First(x => x.Handle == m.Handle).Title);
-                WriteRect(w, "from", m.From);
-                WriteRect(w, "to", m.To);
+                var physical = new ClaudeOS.Core.Layout.Size((int)(dips.Width * scale), (int)(dips.Height * scale));
+                var placement = LayoutEngine.Place(desktop, new PlacementRequest(physical, Anchor: anchor));
+                w.WriteStartObject(key);
+                WriteRect(w, "placed", placement.Bounds);
+                w.WriteString("method", placement.Method.ToString());
+                w.WriteString("reason", placement.Reason);
+                w.WriteStartArray("moves");
+                foreach (var m in placement.Moves)
+                {
+                    w.WriteStartObject();
+                    w.WriteString("title", desktop.Windows.First(x => x.Handle == m.Handle).Title);
+                    WriteRect(w, "from", m.From);
+                    WriteRect(w, "to", m.To);
+                    w.WriteEndObject();
+                }
+
+                w.WriteEndArray();
                 w.WriteEndObject();
             }
 
-            w.WriteEndArray();
+            w.WriteEndObject();
             w.WriteEndObject();
         }
 
