@@ -46,6 +46,17 @@ internal static unsafe partial class Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPINFOHEADER
+    {
+        public uint biSize;
+        public int biWidth, biHeight;
+        public ushort biPlanes, biBitCount;
+        public uint biCompression, biSizeImage;
+        public int biXPelsPerMeter, biYPelsPerMeter;
+        public uint biClrUsed, biClrImportant;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct MONITORINFO { public uint cbSize; public RECT rcMonitor; public RECT rcWork; public uint dwFlags; }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -205,6 +216,39 @@ internal static unsafe partial class Native
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool DestroyIcon(nint icon);
+
+    // ------------------------------------------------------------------ gdi32 (screen capture for the self-test)
+    public const uint SRCCOPY = 0x00CC0020, CAPTUREBLT = 0x40000000;
+
+    [LibraryImport("user32.dll")]
+    public static partial nint GetDC(nint hWnd);
+
+    [LibraryImport("user32.dll")]
+    public static partial int ReleaseDC(nint hWnd, nint hdc);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial nint CreateCompatibleDC(nint hdc);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial nint CreateCompatibleBitmap(nint hdc, int width, int height);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial nint SelectObject(nint hdc, nint obj);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool BitBlt(nint dest, int x, int y, int w, int h, nint src, int sx, int sy, uint rop);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial int GetDIBits(nint hdc, nint bitmap, uint start, uint lines, byte* bits, BITMAPINFOHEADER* info, uint usage);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DeleteObject(nint obj);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DeleteDC(nint hdc);
 
     // ------------------------------------------------------------------ shell32, dwmapi, shcore, kernel32
     [LibraryImport("shell32.dll", EntryPoint = "Shell_NotifyIconW")]

@@ -26,6 +26,8 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
     private readonly List<string> _lines = [];
     private int _failures;
     private string _workspace = "";
+    private string _shots = "";
+    private int _shotNumber;
 
     /// <summary>The marker's path if a self-test was requested; null in normal use.</summary>
     public static string? FlagPath()
@@ -44,6 +46,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
     public async Task RunAsync(string flag)
     {
         var folder = Path.GetDirectoryName(flag)!;
+        _shots = Path.Combine(folder, "shots");
         File.Delete(flag);
         var total = Stopwatch.StartNew();
         _workspace = Directory.CreateTempSubdirectory("claudeos-selftest-").FullName;
@@ -82,6 +85,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         Expect(probe.Results >= 1, $"typing \"q3\" finds the file in Documents (results: {probe.Results}; the index holds {services.Files.Count} file(s))");
         Expect(probe.Visible, $"the bar is visible after being summoned (presence: {services.Bar.Presence.Frame.State}, summon took {probe.SummonMs:0} ms)");
         Expect(probe.Width > 300 && probe.Height > 40, $"the bar has a sensible size ({probe.Width}x{probe.Height})");
+        await Shot("intent-bar");
         bar.Dismiss();
         return $"visible, {probe.Width}x{probe.Height}px, summon {probe.SummonMs:0} ms, input focused: {probe.Focused}. Typing \"q3\" gave {probe.Results} result(s)" +
                (probe.First.Length > 0 ? $" (first: {probe.First})" : "") + $". Drew: {probe.Texts}";
@@ -96,6 +100,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Task.Delay(600);
         Expect(window.LoadStatus == "Success", $"the SVG chart loads (status: {window.LoadStatus})");
         Expect(window.PictureWidth > 50, $"the chart is laid out ({window.PictureWidth:0}px wide)");
+        await Shot("chart-window");
         window.Close();
         return $"{render.Size.Width}x{render.Size.Height} chart, SVG {window.LoadStatus}, drawn {window.PictureWidth:0}px wide. {render.AltText}";
     }
@@ -133,6 +138,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         var widget = ui.Open.OfType<WidgetWindow>().FirstOrDefault();
         Expect(widget is not null, $"the widget window is open (said: {message})");
         Expect(System.Text.RegularExpressions.Regex.IsMatch(widget!.Text, @"\d{1,2}:\d\d"), $"the widget shows a live time (it shows: {widget.Text})");
+        await Shot("widget");
         ui.CloseAll();
         return $"\"{message}\"; widget shows: {widget.Text}";
     }
@@ -157,6 +163,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         Expect(drew.Contains("Leaves this PC", StringComparison.OrdinalIgnoreCase), "and it says it leaves this PC");
         Expect(services.Bar.Presence.Frame.State == ClaudeOS.Core.Presence.PresenceState.NeedsYou, $"the presence is waiting for the person (it is {services.Bar.Presence.Frame.State})");
 
+        await Shot("approval-planted-email");
         card.Close(); // the person says no
         var message = await run;
         Expect(message.Contains("Nothing changed", StringComparison.Ordinal), $"declining reports that nothing changed (said: {message})");
@@ -199,6 +206,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         var asked = window.AskAsync();
         await Task.Delay(400);
         var text = Controls.TreeText.Of(window.Content, 6);
+        await Shot("key-window");
         window.Close();
         await asked;
         Expect(text.Contains("Connect Claude", StringComparison.Ordinal), "the key window draws its title");
@@ -210,6 +218,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         var window = new DiagnosticsWindow(() => bar.LastSummonMilliseconds, () => services.Files.Count, services.Bar.Presence.ReducedMotion);
         await window.RunAsync();
         var report = window.ReportText;
+        await Shot("device-check");
         window.Close();
         Expect(report.Contains("Windows OCR", StringComparison.Ordinal), "the device check produced a report");
         return "\n" + string.Join('\n', report.TrimEnd().Split('\n').Select(l => "      " + l));
@@ -251,6 +260,20 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         {
             _failures++;
             Note($"FAIL  {name} ({clock.ElapsedMilliseconds} ms): {e.GetType().Name}: {e.Message}");
+        }
+    }
+
+    /// <summary>Save a picture of the screen as it is now, once things have settled.</summary>
+    private async Task Shot(string name)
+    {
+        try
+        {
+            await Task.Delay(450);
+            await ScreenShot.SaveAsync(Path.Combine(_shots, $"{++_shotNumber:00}-{name}.png"));
+        }
+        catch (Exception e)
+        {
+            Note($"      (could not take the {name} picture: {e.GetType().Name}: {e.Message})");
         }
     }
 
