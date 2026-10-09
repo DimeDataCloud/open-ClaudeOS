@@ -136,3 +136,31 @@ public static class Session
         }
     }
 }
+
+/// <summary>
+/// "Making something new produces new files only, so it applies straight away with Undo available."
+/// This is that rule, enforced: the plan is applied without an approval card only if every action
+/// creates a file that does not exist yet. Anything else is refused here and must go through
+/// <see cref="Session.ReviewAndApplyAsync"/>.
+/// </summary>
+public static class Creations
+{
+    public static async Task<ExecutionResult> ApplyAsync(Plan plan, Overlay overlay, Policy policy, StateDir state, TimeProvider? clock = null, CancellationToken ct = default)
+    {
+        var assessments = policy.Preview(plan, overlay);
+        var denied = assessments.FirstOrDefault(a => a.Denied is not null);
+        if (denied is not null)
+        {
+            throw new PolicyDeniedException(denied.Denied!);
+        }
+
+        var notNew = assessments.FirstOrDefault(a => a.Action is not ClaudeOS.Core.Actions.WriteFile || a.Risk != Risk.Low);
+        if (notNew is not null)
+        {
+            throw new PolicyDeniedException($"'{notNew.Action.Describe()}' is not a new file, so it needs your approval first");
+        }
+
+        state.Log("created", Audit.Of(("digest", Audit.Str(plan.Digest())), ("files", Audit.Strs(plan.Actions.Select(a => a.Describe())))));
+        return await Executor.ExecuteAsync(plan, Grant.ForPlan(plan, clock: clock), overlay, new OutboxConnector(state.Outbox, clock), state, clock, ct).ConfigureAwait(false);
+    }
+}
