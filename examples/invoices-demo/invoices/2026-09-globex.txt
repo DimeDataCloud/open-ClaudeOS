@@ -1,0 +1,7 @@
+GLOBEX - Invoice #GX-5512
+Date: 2026-09-11
+Bill to: Your Company
+
+Consulting, 10 hours @ 95.00     950.00
+
+TOTAL DUE: 950.00 USD

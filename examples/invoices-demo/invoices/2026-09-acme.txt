@@ -1,0 +1,9 @@
+ACME CORPORATION - Invoice #A-20931
+Date: 2026-09-03
+Bill to: Your Company
+
+Item                    Qty   Amount
+Anvil, industrial         2   300.00
+Rocket skates             1   450.00
+
+TOTAL DUE: 750.00 USD
