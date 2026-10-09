@@ -78,60 +78,28 @@ jobs:
           }
 
       - uses: actions/upload-artifact@v4
+        # Artifact storage is a per-account quota that can be exhausted; the build itself is still
+        # proven by the step above and by the self-test below.
+        continue-on-error: true
         with:
           name: open-ClaudeOS-${{ matrix.platform }}
           path: |
             out/**/*.msix
             out/**/*.cer
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Summary
         shell: pwsh
         run: |
           "### open-ClaudeOS ${{ matrix.platform }} package`n`nSigned with: ${{ steps.cert.outputs.mode }}`n`nInstall: trust the .cer once (Local Machine > Trusted People), then open the .msix. See docs/testing.md." >> $env:GITHUB_STEP_SUMMARY
 
-  aot-probe:
-    name: Native AOT probe
-    runs-on: windows-latest
-    # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist and may not
-    # work yet. The result is written to the run summary.
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-      - name: Publish with Native AOT
-        id: aot
-        shell: pwsh
-        run: |
-          dotnet publish windows/src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -r win-x64 -p:Platform=x64 -p:PublishAot=true -p:WindowsPackageType=None -v:minimal "-flp:logfile=aot-errors.log;errorsonly"
-          $ok = ($LASTEXITCODE -eq 0)
-          "### Native AOT publish (win-x64)`n`nResult: $(if ($ok) { 'worked' } else { 'did not work yet' })" >> $env:GITHUB_STEP_SUMMARY
-          if (-not $ok -and (Test-Path aot-errors.log)) {
-            "`n``````n$((Get-Content aot-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 15) -join "`n")`n``````" >> $env:GITHUB_STEP_SUMMARY
-          }
-          exit $LASTEXITCODE
-
-  smoke:
-    name: Run it (x64 desktop)
-    needs: msix
-    runs-on: windows-latest
-    # The first time the shell actually runs is here, on a real Windows desktop session. It installs
-    # the signed package, asks the app to test itself (docs/testing.md) and prints what it reports.
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: open-ClaudeOS-x64
-          path: pkg
-
-      - name: Install the package
+      - name: Install the package (x64 only)
+        if: matrix.platform == 'x64'
         id: install
         shell: pwsh
         run: |
-          $cer = Get-ChildItem pkg -Recurse -Filter *.cer | Select-Object -First 1
-          $msix = Get-ChildItem pkg -Recurse -Filter *.msix | Select-Object -First 1
+          $cer = Get-ChildItem out -Recurse -Filter *.cer | Select-Object -First 1
+          $msix = Get-ChildItem out -Recurse -Filter *.msix | Select-Object -First 1
           Import-Certificate -FilePath $cer.FullName -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
           Add-AppxPackage -Path $msix.FullName
           $package = Get-AppxPackage -Name OpenClaudeOS.Dev
@@ -139,7 +107,8 @@ jobs:
           Write-Host "Installed $($package.PackageFullName)"
           "pfn=$($package.PackageFamilyName)" >> $env:GITHUB_OUTPUT
 
-      - name: Self-test
+      - name: Run it and let it test itself (x64 only)
+        if: matrix.platform == 'x64'
         shell: pwsh
         env:
           PFN: ${{ steps.install.outputs.pfn }}
@@ -175,3 +144,27 @@ jobs:
               ForEach-Object { Get-Content $_.FullName -Tail 5 }
             exit 1
           }
+
+  aot-probe:
+    name: Native AOT probe
+    runs-on: windows-latest
+    # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist. Expect it to fail
+    # while the official Anthropic SDK needs reflection-based JSON (see docs/stack-decision.md); the
+    # result and the first errors are written to the run summary.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish with Native AOT
+        id: aot
+        shell: pwsh
+        run: |
+          dotnet publish windows/src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -r win-x64 -p:Platform=x64 -p:PublishAot=true -p:WindowsPackageType=None -v:minimal "-flp:logfile=aot-errors.log;errorsonly"
+          $ok = ($LASTEXITCODE -eq 0)
+          "### Native AOT publish (win-x64)`n`nResult: $(if ($ok) { 'worked' } else { 'did not work yet' })" >> $env:GITHUB_STEP_SUMMARY
+          if (-not $ok -and (Test-Path aot-errors.log)) {
+            "`n``````n$((Get-Content aot-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 15) -join "`n")`n``````" >> $env:GITHUB_STEP_SUMMARY
+          }
+          exit $LASTEXITCODE
