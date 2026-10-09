@@ -16,3 +16,7 @@ TestResults/
 artifacts/
 *.pfx
 *.snk
+
+# design tooling
+design/node_modules
+design/dist/*.png

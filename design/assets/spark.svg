@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Spark">
+  <defs>
+    <radialGradient id="core" cx="38%" cy="32%" r="78%">
+      <stop offset="0" stop-color="#FFC9A8"/>
+      <stop offset="0.38" stop-color="#FF9B6B"/>
+      <stop offset="0.72" stop-color="#EB6834"/>
+      <stop offset="1" stop-color="#C2481B"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0.55" stop-color="#EB6834" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#EB6834" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="62" fill="url(#halo)"/>
+  <circle cx="64" cy="64" r="36" fill="url(#core)"/>
+  <circle cx="64" cy="64" r="48" fill="none" stroke="#EB6834" stroke-opacity="0.55" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="238 64" transform="rotate(-62 64 64)"/>
+</svg>
