@@ -36,24 +36,78 @@ window.COS_DATA = {
   },
   "layouts": {
     "scale": 2,
-    "desktop": {
-      "width": 2880,
-      "height": 1920,
-      "work": 1840
-    },
     "scenarios": [
       {
         "name": "empty",
         "windows": [],
-        "placed": {
-          "x": 2024,
-          "y": 16,
-          "w": 840,
-          "h": 560
-        },
-        "method": "FreeSpace",
-        "reason": "free space on screen",
-        "moves": []
+        "placements": {
+          "sheet": {
+            "placed": {
+              "x": 1344,
+              "y": 16,
+              "w": 1520,
+              "h": 1000
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "widget": {
+            "placed": {
+              "x": 2424,
+              "y": 16,
+              "w": 440,
+              "h": 180
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "spend-by-month": {
+            "placed": {
+              "x": 1352,
+              "y": 16,
+              "w": 1512,
+              "h": 906
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "spend-by-category": {
+            "placed": {
+              "x": 1568,
+              "y": 16,
+              "w": 1296,
+              "h": 776
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "spend-stacked": {
+            "placed": {
+              "x": 1904,
+              "y": 16,
+              "w": 960,
+              "h": 600
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "weekly-area": {
+            "placed": {
+              "x": 944,
+              "y": 16,
+              "w": 1920,
+              "h": 1040
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          }
+        }
       },
       {
         "name": "one-app",
@@ -69,15 +123,90 @@ window.COS_DATA = {
             "active": true
           }
         ],
-        "placed": {
-          "x": 2024,
-          "y": 16,
-          "w": 840,
-          "h": 560
-        },
-        "method": "FreeSpace",
-        "reason": "free space on screen",
-        "moves": []
+        "placements": {
+          "sheet": {
+            "placed": {
+              "x": 1800,
+              "y": 16,
+              "w": 1064,
+              "h": 700
+            },
+            "method": "FreeSpaceShrunk",
+            "reason": "free space, shrunk to 70% to fit",
+            "moves": []
+          },
+          "widget": {
+            "placed": {
+              "x": 2424,
+              "y": 16,
+              "w": 440,
+              "h": 180
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "spend-by-month": {
+            "placed": {
+              "x": 1806,
+              "y": 16,
+              "w": 1058,
+              "h": 634
+            },
+            "method": "FreeSpaceShrunk",
+            "reason": "free space, shrunk to 70% to fit",
+            "moves": []
+          },
+          "spend-by-category": {
+            "placed": {
+              "x": 1827,
+              "y": 16,
+              "w": 1037,
+              "h": 621
+            },
+            "method": "FreeSpaceShrunk",
+            "reason": "free space, shrunk to 80% to fit",
+            "moves": []
+          },
+          "spend-stacked": {
+            "placed": {
+              "x": 1904,
+              "y": 16,
+              "w": 960,
+              "h": 600
+            },
+            "method": "FreeSpace",
+            "reason": "free space on screen",
+            "moves": []
+          },
+          "weekly-area": {
+            "placed": {
+              "x": 1448,
+              "y": 536,
+              "w": 1416,
+              "h": 767
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 1700,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          }
+        }
       },
       {
         "name": "maximized",
@@ -93,31 +222,170 @@ window.COS_DATA = {
             "active": true
           }
         ],
-        "placed": {
-          "x": 1736,
-          "y": 640,
-          "w": 840,
-          "h": 560
-        },
-        "method": "MadeRoom",
-        "reason": "no free space; snapped the active window to half the screen",
-        "moves": [
-          {
-            "title": "Notes",
-            "from": {
-              "x": 0,
-              "y": 0,
-              "w": 2880,
-              "h": 1840
-            },
-            "to": {
-              "x": 16,
-              "y": 16,
+        "placements": {
+          "sheet": {
+            "placed": {
+              "x": 1448,
+              "y": 454,
               "w": 1416,
-              "h": 1808
-            }
+              "h": 931
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 2880,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "widget": {
+            "placed": {
+              "x": 1936,
+              "y": 830,
+              "w": 440,
+              "h": 180
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 2880,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "spend-by-month": {
+            "placed": {
+              "x": 1448,
+              "y": 496,
+              "w": 1416,
+              "h": 848
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 2880,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "spend-by-category": {
+            "placed": {
+              "x": 1508,
+              "y": 532,
+              "w": 1296,
+              "h": 776
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 2880,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "spend-stacked": {
+            "placed": {
+              "x": 1676,
+              "y": 620,
+              "w": 960,
+              "h": 600
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 2880,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "weekly-area": {
+            "placed": {
+              "x": 1448,
+              "y": 536,
+              "w": 1416,
+              "h": 767
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 2880,
+                  "h": 1840
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
           }
-        ]
+        }
       },
       {
         "name": "snapped",
@@ -143,15 +411,122 @@ window.COS_DATA = {
             "active": false
           }
         ],
-        "placed": {
-          "x": 2024,
-          "y": 16,
-          "w": 840,
-          "h": 560
-        },
-        "method": "OverBackground",
-        "reason": "no free space; floating over a background window, the active window stays visible",
-        "moves": []
+        "placements": {
+          "sheet": {
+            "placed": {
+              "x": 1448,
+              "y": 454,
+              "w": 1416,
+              "h": 931
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1420,
+                  "h": 1808
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "widget": {
+            "placed": {
+              "x": 2424,
+              "y": 16,
+              "w": 440,
+              "h": 180
+            },
+            "method": "OverBackground",
+            "reason": "no free space; floating over a background window, the active window stays visible",
+            "moves": []
+          },
+          "spend-by-month": {
+            "placed": {
+              "x": 1448,
+              "y": 496,
+              "w": 1416,
+              "h": 848
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1420,
+                  "h": 1808
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          },
+          "spend-by-category": {
+            "placed": {
+              "x": 1568,
+              "y": 16,
+              "w": 1296,
+              "h": 776
+            },
+            "method": "OverBackground",
+            "reason": "no free space; floating over a background window, the active window stays visible",
+            "moves": []
+          },
+          "spend-stacked": {
+            "placed": {
+              "x": 1904,
+              "y": 16,
+              "w": 960,
+              "h": 600
+            },
+            "method": "OverBackground",
+            "reason": "no free space; floating over a background window, the active window stays visible",
+            "moves": []
+          },
+          "weekly-area": {
+            "placed": {
+              "x": 1448,
+              "y": 536,
+              "w": 1416,
+              "h": 767
+            },
+            "method": "MadeRoom",
+            "reason": "no free space; snapped the active window to half the screen",
+            "moves": [
+              {
+                "title": "Notes",
+                "from": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1420,
+                  "h": 1808
+                },
+                "to": {
+                  "x": 16,
+                  "y": 16,
+                  "w": 1416,
+                  "h": 1808
+                }
+              }
+            ]
+          }
+        }
       }
     ]
   },

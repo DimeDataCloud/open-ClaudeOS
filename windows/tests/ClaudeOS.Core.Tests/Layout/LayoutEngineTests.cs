@@ -73,6 +73,19 @@ public sealed class LayoutEngineTests
     }
 
     [Fact]
+    public void Content_too_wide_for_the_background_window_shrinks_before_the_active_one_is_moved()
+    {
+        var left = Win(1, new Rect(16, 16, 1420, 1808), active: true);
+        var right = Win(2, new Rect(1444, 16, 1420, 1808));
+        var p = LayoutEngine.Place(Laptop(left, right), new PlacementRequest(new Size(1520, 1000)));
+
+        Assert.Equal(PlacementMethod.OverBackground, p.Method);
+        Assert.Empty(p.Moves);
+        Assert.False(p.Bounds.Intersects(left.Bounds));
+        Assert.True(p.Bounds.Width < 1520);
+    }
+
+    [Fact]
     public void With_an_external_monitor_the_content_goes_to_the_monitor_you_are_working_on()
     {
         var external = new MonitorInfo("dell", new Rect(2880, 0, 2560, 1400), 1.0);
