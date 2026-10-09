@@ -22,6 +22,7 @@ deterministic execution.** The original concept is in
 | Threat model | [docs/threat-model.md](docs/threat-model.md) | Current |
 | Roadmap with an exit test per phase | [docs/roadmap.md](docs/roadmap.md) | Current |
 | Build 1 plan: Windows on ARM test build for a Surface Pro | [docs/windows-arm64-plan.md](docs/windows-arm64-plan.md) | Plan only; nothing built |
+| Stack decision record | [docs/stack-decision.md](docs/stack-decision.md) | Decided 2026-10-09, subject to M0 measurements |
 | Research: Jev decision model | [reports/Jev decision model and Claude.md](reports/Jev%20decision%20model%20and%20Claude.md) | Done |
 | Research: Googlebook OS and Gemini app creation | `reports/Googlebook OS and Gemini app creation.md`, notes in `research_notes/` | Notes done; report being written |
 
@@ -30,8 +31,10 @@ deterministic execution.** The original concept is in
 - **Open source.** The license is not chosen yet; Apache-2.0 is recommended.
 - **First platform: Windows 11 ARM64**, as an app layer, tested on the owner's
   Surface Pro. Linux follows on the same core.
-- **Stack: native Windows.** C# on .NET 10, WinUI 3 (Windows App SDK),
-  Win32 and DWM, and WebView2 only for custom HTML artifacts and web mods. The
+- **Stack: native Windows.** C# on .NET 10 with Native AOT, WinUI 3
+  (Windows App SDK) for structure, Composition and Win2D for motion, Win32
+  and DWM for windows, Windows ML on the NPU, and the official Anthropic C#
+  SDK. WebView2 only for custom HTML artifacts and web mods. The
   owner's criteria, in order: native feel, then latency, then token use.
   Electron and Tauri were considered and rejected.
 - **The model never sits between input and the screen.** Opening and finding
@@ -53,8 +56,7 @@ deterministic execution.** The original concept is in
 
 ## Next
 
-1. **Confirm the stack.** Stress-test the native .NET and WinUI choice
-   against the alternatives on latency, token use and native feel.
+1. **Stack: done.** See docs/stack-decision.md.
 2. **Visual design.** The brief: clean, intentional minimalism; macOS-like
    fluidity and simplicity; Windows-like customizability; a native backend; a
    Claude presence that comes alive to help, so using the computer feels like

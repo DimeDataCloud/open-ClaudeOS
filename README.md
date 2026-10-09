@@ -19,6 +19,7 @@ one of several ways to get it done.
 - [Architecture](docs/architecture.md): the working design, and what changed from the concept and why
 - [Challenges](docs/challenges.md): the hard problems (security, latency, recovery, power, legacy apps, economics) and the plan for each
 - [Build 1: Windows on ARM](docs/windows-arm64-plan.md): the first test build for a Surface Pro: instant file opening, subject-only artifact windows, mods
+- [Stack decision](docs/stack-decision.md): why native C#, WinUI 3, Composition and Windows ML, with the evidence and what would change it
 - [Threat model](docs/threat-model.md): prompt injection and how the design contains it
 - [Roadmap](docs/roadmap.md): phases from this prototype to a desktop shell, each with an exit test
 

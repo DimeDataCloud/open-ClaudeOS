@@ -33,26 +33,24 @@ machine goes through the approval card.
 
 ## Stack: native Windows
 
-**C# on .NET 10, with WinUI 3 (Windows App SDK) for the interface, and the
-Win32 and DWM APIs for windows and placement.** Most content is drawn with
-native controls. A web view (WebView2) is used only where web content is the
-point: custom HTML artifacts and web-based mods.
+**C# on .NET 10 with Native AOT. WinUI 3 (Windows App SDK) for structure,
+Windows Composition and Win2D for motion and drawing, Win32 and DWM for
+windows, Windows ML on the NPU for on-device models, and the official
+Anthropic C# SDK for Claude.** A web view (WebView2) is used only where web
+content is the point: custom HTML artifacts and web-based mods.
 
-| Goal | Why this stack wins |
+The full reasoning, the evidence, the rejected options and the measurements
+that could change the choice are in [stack-decision.md](stack-decision.md).
+In short:
+
+| Goal | How the stack meets it |
 |---|---|
-| **Native feel** | Real Fluent controls, Windows' own text rendering, Mica and Acrylic materials, system rounded corners and shadows. Touch, pen and Windows Ink, screen readers (UI Automation), and per-monitor scaling all come built in, which matters on a Surface. |
-| **Latency** | Native windows and controls show in milliseconds. A web view needs its own process and engine before it can draw, so most artifacts avoid one entirely. Windows are pre-created and reused. Native AOT compilation, if the spike confirms our dependencies support it, makes startup faster again. |
-| **Token use** | The stack doesn't change tokens much; the architecture does (see "Token efficiency"). It does help indirectly: native renderers take compact specs that Claude writes in a few hundred tokens, instead of whole HTML pages. |
-| **Integration** | Direct access to the Windows features that make it feel part of the system (see "Windows integration"). |
-| **Claude** | The official Anthropic C# SDK. |
-| **Portability** | The core library (planner, policy, consent, undo, layout maths) is plain .NET and runs on Linux and macOS too. Only the shell is Windows-specific. |
-
-**Options considered and rejected:**
-
-| Option | Why not |
-|---|---|
-| Electron + TypeScript | Ships a second browser engine. Every window is a web page, which is the slowest to appear and the least native to touch, pen and text. It is also the heaviest on memory and battery. |
-| Tauri 2 + Rust | Lighter, but the interface is still web-rendered, so it never quite feels native. There is also no official Claude SDK for Rust. |
+| **Native feel** | WinUI 3 is what Windows 11's own shell is moving to. Real Fluent controls, Windows' text rendering, Mica and Acrylic, system corners and shadows, touch, pen, Ink, screen readers and per-monitor scaling. |
+| **Latency** | Native AOT means a fast start and no compilation pauses. Windows are pre-created and reused. Motion runs on the system compositor at 120 Hz, independent of the app's UI thread. XAML layout is kept off the fastest paths, and Microsoft's 2026 WinUI performance optimizations are turned on. |
+| **Token use** | Decided by the architecture (see "Token efficiency"). The stack makes it cheap: Windows ML runs on-device models, and native renderers take compact specs. |
+| **Integration** | MSIX package identity unlocks the Copilot key, Windows' agent APIs and Explorer menus. |
+| **Claude** | The official `Anthropic` C# SDK, pinned while it is in beta, behind one interface. |
+| **Portability** | The core library is plain .NET and runs on Linux and macOS. On Linux, Uno Platform could reuse the WinUI views. |
 
 **The Python prototype** stays as the reference design. Its tests are ported
 to C#, and the C# core must pass them.
@@ -183,7 +181,8 @@ The cheapest token is the one never sent. In order of impact:
    and use no model at all.
 2. **Intent routing on the device's own chip.** The Surface Pro's Snapdragon
    chip has an NPU, which makes it a Copilot+ PC. The default router is our
-   own small classifier, run on the NPU through ONNX Runtime. It decides
+   own small classifier, run on the NPU through Windows ML (Microsoft's
+   system-managed ONNX Runtime with the Qualcomm NPU driver). It decides
    between "open", "make" and "change" and fills in simple details, with no
    cloud call. Windows' built-in on-device model is not the default for now.
    Phi Silica needs a Limited Access Feature token from Microsoft, and
@@ -349,7 +348,7 @@ way.
 
 | Milestone | Delivers | Done when |
 |---|---|---|
-| **M0: spike** | Packaged ARM64 app installs with the test certificate. A Win32 popup with native content, rounded corners, shadow and no frame shows a native chart. Lists windows and moves one. Hotkey, and the Copilot key if allowed. A small intent classifier runs on the NPU through ONNX Runtime. Windows OCR works. Registers as an Agent Launcher. Checks whether Native AOT works. | Each item works, or has a recorded fallback, on your Surface |
+| **M0: spike** | Packaged ARM64 app installs with the test certificate. A Win32 popup with native content, rounded corners, shadow and no frame shows a native chart. Lists windows and moves one. Hotkey, and the Copilot key if allowed. A small intent classifier runs on the NPU through Windows ML. Windows OCR works. Registers as an Agent Launcher. Checks whether Native AOT works. | Each item works, or has a recorded fallback, on your Surface |
 | **M1: open anything** | Intent Bar, local intent grammar, Search-index lookup, native viewers, preview handlers, default-app opening with placement, layout engine, "put it back" | "open X" lands in free space in every test arrangement below, within the latency budget |
 | **M2: make things** | C# core with the Claude planner (official C# SDK), scoped read-only tools and a `create_artifact` tool; native renderers; local data execution; subject-only windows; artifacts saved as files; on-device routing if available | Each content type streams in with no chrome; the token log shows spreadsheet charts cost about the same at any row count |
 | **M3: mods** | Manifest format; declarative, scripted and web levels; capabilities; widget, artifact-type, command, layout-rule and theme mods; "make me a mod" flow | You can create, tweak, disable and remove a mod by asking |
