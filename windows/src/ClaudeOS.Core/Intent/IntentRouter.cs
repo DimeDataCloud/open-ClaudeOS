@@ -4,7 +4,7 @@ namespace ClaudeOS.Core.Intent;
 
 public enum RouteSource { Grammar, Npu, Cloud }
 
-public sealed record Routing(Intent Intent, RouteSource Source, TimeSpan Elapsed);
+public sealed record Routing(UserIntent Intent, RouteSource Source, TimeSpan Elapsed);
 
 public enum IntentLabel { Open, Find, Make, Change, Window, Other }
 
@@ -24,7 +24,7 @@ public interface IIntentClassifier
 /// else first. Returns <see cref="UnclearIntent"/> if even the model cannot tell.</summary>
 public interface ICloudIntentResolver
 {
-    Task<Intent> ResolveAsync(string text, CancellationToken ct = default);
+    Task<UserIntent> ResolveAsync(string text, CancellationToken ct = default);
 }
 
 /// <summary>Grammar first (no model), then the on-device classifier, then the cloud.</summary>
@@ -57,7 +57,7 @@ public sealed class IntentRouter(IIntentClassifier? classifier = null, ICloudInt
         return new Routing(new UnclearIntent(text), RouteSource.Grammar, clock.Elapsed);
     }
 
-    private static Intent? FromLabel(IntentLabel label, string text) => label switch
+    private static UserIntent? FromLabel(IntentLabel label, string text) => label switch
     {
         IntentLabel.Open => new OpenIntent(text, text.Trim()),
         IntentLabel.Find => new FindIntent(text, text.Trim()),
