@@ -4,6 +4,7 @@ using ClaudeOS.Core.Actions;
 using ClaudeOS.Core.Artifacts;
 using ClaudeOS.Core.Design;
 using ClaudeOS.Core.Intent;
+using ClaudeOS.Core.Layout;
 using ClaudeOS.Core.Mods;
 using ClaudeOS.Core.Planning;
 using ClaudeOS.Core.Presence;
@@ -91,6 +92,33 @@ internal sealed class AgentService
             Say(new Declined());
             return "Stopped.";
         }
+    }
+
+    /// <summary>The layout-rule mods that are on, for the placer.</summary>
+    public IReadOnlyList<ModManifest> ActiveRules() =>
+        [.. _mods.LoadAll().Where(m => m.Status == ModStatus.Active && m.Manifest is { Kind: ModKind.LayoutRule }).Select(m => m.Manifest!)];
+
+    /// <summary>The person said yes to an offered placement: it becomes a layout-rule mod, through the usual card.</summary>
+    public async Task<string> InstallRuleAsync(Suggestion offer)
+    {
+        var proposal = _mods.Review(HabitRules.ToManifestJson(offer));
+        if (Directory.Exists(Path.Combine(_mods.Root, proposal.Manifest.Id)))
+        {
+            return "That rule is already in place.";
+        }
+
+        Say(new PlanReady(1, "Low", false));
+        if (!await _ui.ApproveAsync(ApprovalModel.FromMod(proposal)))
+        {
+            Say(new Declined());
+            return "Okay. Nothing was added.";
+        }
+
+        Say(new Approved());
+        await Creations.ApplyAsync(proposal.Plan, new Overlay(_mods.Root), _policy, _state);
+        _mods.RecordApproval(proposal.Manifest, proposal.ManifestJson);
+        Say(new Finished($"Done. New {offer.ContentKind}s will open there", Undoable: true));
+        return $"Done. New {offer.ContentKind}s will open there";
     }
 
     /// <summary>Widgets the person added earlier come back at start-up, with only the access they approved.</summary>

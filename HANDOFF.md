@@ -83,9 +83,10 @@ In order:
    in `ClaudeOS.Core/Planning` (they are plain constants with tests around them).
 3. **On-device routing.** Add the Windows ML classifier behind `IIntentClassifier`;
    the grammar already handles the common phrases.
-4. **Habits.** `HabitTracker` (core, tested) notices where you keep putting things and
-   returns a suggestion; the shell does not show or accept one yet. Suggest-only, never
-   automatic: accepting should write a layout-rule mod through the usual approval.
+4. **Habits, further.** The loop works end to end (three drags, an offer in the bar, "yes",
+   a card, a layout-rule mod, the next chart lands there). Counts live in memory, so a restart
+   starts afresh; persist them if that proves annoying. Also worth adding: "no, stop asking"
+   remembered, and rules for files opened from the bar.
 5. **More artifact types** (report, table, diagram) as new recipes, the same way
    charts work: Claude writes a compact spec, local code validates and renders it.
 6. **Scripted and web mods**, only with their sandboxes (Jint with time and memory

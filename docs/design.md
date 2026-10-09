@@ -168,6 +168,16 @@ active window to half the screen. Focus mode centres the content and restores
 everything when it is dismissed. Every move is recorded, so "put it back" restores the
 screen, and it leaves alone any window you have moved yourself since.
 
+### Habits: it offers, you decide
+
+When you put the same kind of thing in the same place three times, the presence
+holds a quiet offer for the next time you open the bar ("Open chart on the top
+right from now on?"). Say "yes" and the usual approval card appears, one line,
+low risk. Approving writes an ordinary layout-rule mod, which the placer applies
+from then on and which you can read, edit or delete as a file. Say "no" and it
+does not ask again. Nothing is learned silently and nothing changes without that
+card.
+
 ## Accessibility
 
 - Every control is keyboard-reachable; the bar, approval card and key window

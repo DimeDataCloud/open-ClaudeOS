@@ -17,7 +17,7 @@ internal sealed record BarResult(ResultKind Kind, string Title, string Subtitle,
 /// Enter does. Opening, finding, moving windows and undo are decided and done here, locally and
 /// instantly, with no model. Anything that needs Claude is handed to the agent service.
 /// </summary>
-internal sealed class BarController(PresenceMachine presence, FileIndex files, StateDir state, Placer placer)
+internal sealed class BarController(PresenceMachine presence, FileIndex files, StateDir state, Placer placer, HabitService habits)
 {
     private readonly IntentRouter _router = new();
     private LayoutHistory History => placer.History;
@@ -45,6 +45,10 @@ internal sealed class BarController(PresenceMachine presence, FileIndex files, S
         if (parsed.Intent is WindowIntent w)
         {
             results.Add(new BarResult(ResultKind.Command, WindowCommandTitle(w.Command), "Moves the window; \"put it back\" restores it", ""));
+        }
+        else if (parsed.Intent is SuggestionReplyIntent reply && habits.Pending is { } offered)
+        {
+            results.Add(new BarResult(ResultKind.Command, reply.Accepted ? "Yes, do that" : "No thanks", offered.Message, "", null));
         }
         else if (parsed.Intent is UndoIntent)
         {
@@ -88,6 +92,22 @@ internal sealed class BarController(PresenceMachine presence, FileIndex files, S
 
             case UndoIntent:
                 return Undo();
+
+            case SuggestionReplyIntent reply:
+                presence.Handle(new Routed(routing, reply.Accepted ? "Setting that up" : "Okay"));
+                if (habits.Take() is not { } offer)
+                {
+                    presence.Handle(new Failed("There is nothing to confirm right now"));
+                    return "There is nothing to confirm right now";
+                }
+
+                if (!reply.Accepted)
+                {
+                    presence.Handle(new Finished("Okay. I won't suggest that again"));
+                    return "Okay";
+                }
+
+                return Agent is null ? "Not available yet" : await Agent.InstallRuleAsync(offer);
 
             default:
                 presence.Handle(new Routed(routing));

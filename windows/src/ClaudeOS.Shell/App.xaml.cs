@@ -34,7 +34,7 @@ public partial class App : Application
         _bar = new IntentBarWindow(Services.Bar);
         _bar.Prewarm();
 
-        var ui = new ShellUi(_dispatcher, Services.Placer, Services.Bar.Presence);
+        var ui = new ShellUi(_dispatcher, Services.Placer, Services.Bar.Presence, Services.Habits);
         Services.Bar.Agent = new AgentService(
             Services.Bar.Presence,
             Services.State,
@@ -42,6 +42,7 @@ public partial class App : Application
             Services.Files,
             ui,
             () => RequestedTheme == ApplicationTheme.Dark ? Appearance.Dark : Appearance.Light);
+        Services.Placer.Rules = Services.Bar.Agent.ActiveRules;
         Services.Bar.Agent.RestoreWidgets();
 
         // A developer/CI switch: if the package's private folder holds selftest.flag, run the shell
@@ -95,6 +96,8 @@ internal sealed class AppServices
 
     public required Placer Placer { get; init; }
 
+    public required HabitService Habits { get; init; }
+
     public required TokenLedger Ledger { get; init; }
 
     public static AppServices Create(bool reducedMotion)
@@ -103,13 +106,15 @@ internal sealed class AppServices
         var files = new FileIndex();
         var presence = new PresenceMachine(reducedMotion: reducedMotion);
         var placer = new Placer(state);
+        var habits = new HabitService(presence);
         return new AppServices
         {
             State = state,
             Files = files,
             Ledger = new TokenLedger(Path.Combine(state.Path, "tokens.jsonl"), new Budget(DailyUsd: 5, MonthlyUsd: 60)),
             Placer = placer,
-            Bar = new BarController(presence, files, state, placer),
+            Habits = habits,
+            Bar = new BarController(presence, files, state, placer, habits),
         };
     }
 }

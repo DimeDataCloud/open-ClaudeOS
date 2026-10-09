@@ -1,4 +1,5 @@
 using ClaudeOS.Core.Layout;
+using ClaudeOS.Core.Mods;
 using ClaudeOS.Core.Safety;
 
 namespace ClaudeOS.Shell.Services;
@@ -12,11 +13,21 @@ internal sealed class Placer(StateDir state)
 {
     public LayoutHistory History { get; } = new();
 
+    /// <summary>The layout-rule mods that are on right now ("open charts on the top right").</summary>
+    public Func<IReadOnlyList<ModManifest>>? Rules { get; set; }
+
     /// <summary>Find room for a window of the given size in device pixels.</summary>
     public Placement Place(Size physical, Anchor anchor = Anchor.Auto, long? ignoreWindow = null, string kind = "content")
     {
         var desktop = WindowCatalog.Capture();
-        var placement = LayoutEngine.Place(desktop, new PlacementRequest(physical, Anchor: anchor, IgnoreWindow: ignoreWindow));
+        var request = new PlacementRequest(physical, Anchor: anchor, IgnoreWindow: ignoreWindow);
+        if (Rules?.Invoke() is { Count: > 0 } rules)
+        {
+            // A rule the person accepted wins over where the content would have gone by default.
+            request = ModEffects.ApplyRules(rules, kind, request);
+        }
+
+        var placement = LayoutEngine.Place(desktop, request);
         foreach (var move in placement.Moves)
         {
             WindowCatalog.Move(move.Handle, move.To);
