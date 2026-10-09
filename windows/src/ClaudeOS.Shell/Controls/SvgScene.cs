@@ -133,7 +133,7 @@ internal static class SvgScene
             FontSize = size,
             FontFamily = family,
             FontWeight = Number(e, "font-weight", 400) >= 600 ? FontWeights.SemiBold : FontWeights.Normal,
-            Foreground = Brush(e.Attribute("fill")?.Value) ?? new SolidColorBrush(Colors.Black),
+            Foreground = Brush(e.Attribute("fill")?.Value) ?? new SolidColorBrush(Color.FromArgb(255, 0, 0, 0)),
             IsHitTestVisible = false,
         };
         if (e.Attribute("style")?.Value.Contains("tabular-nums", StringComparison.Ordinal) == true)
