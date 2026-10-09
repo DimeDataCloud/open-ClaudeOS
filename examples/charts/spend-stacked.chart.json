@@ -1,0 +1,14 @@
+{
+  "type": "chart",
+  "title": "Where the money went",
+  "data": { "source": "q3-budget.csv" },
+  "transform": [
+    { "derive": { "as": "quarter", "from": "date", "unit": "quarter" } },
+    { "group": { "by": ["quarter", "category"], "aggregate": [{ "op": "sum", "field": "amount", "as": "spend" }] } }
+  ],
+  "mark": "bar",
+  "stack": true,
+  "x": { "field": "quarter" },
+  "y": { "field": "spend", "format": "currency:USD" },
+  "color": { "field": "category" }
+}
