@@ -87,7 +87,7 @@ covered".
 
 ## The Windows shell in CI
 
-Every push compiles the shell for x64 and ARM64 on a Windows runner. That proves
+Pull requests and `main` compile the shell for x64 and ARM64 on a Windows runner. That proves
 the XAML and C# are consistent and the packages restore. The *Package (Windows)*
 workflow then goes further: it builds the signed MSIX, **installs it on a
 Windows desktop session, launches it, and has the app test itself.**

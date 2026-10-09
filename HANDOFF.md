@@ -48,6 +48,18 @@ You asked for no questions, so these defaults were taken; each is easy to change
 
 ## For you (the owner)
 
+0. **GitHub Actions needs attention first.** The last commits' jobs fail within two seconds
+   with "the job was not started because recent account payments have failed or your
+   spending limit needs to be increased". This build's heavy use of Windows runners (which
+   bill at twice the rate), plus every push running everything twice (once for the push, once
+   for the pull request), used up the account's Actions allowance. Nothing is wrong with the
+   code: the last commit that ran, `489180f`, had all five workflow runs green (233 then 248
+   tests, both Windows compiles, the signed MSIX, and the self-test on a Windows desktop).
+   Raise the spending limit or wait for the monthly reset, then re-run. The workflows have
+   since been made cheaper: they no longer run on both push and pull request, the Windows
+   package job runs only when the app or packaging changes (or on demand from the Actions
+   tab), and the Native AOT probe runs only on demand.
+
 1. **Install it on the Surface.** Releases → **Latest CI build** (a rolling pre-release
    the package workflow refreshes on every push): download
    `ClaudeOS.Shell_*_ARM64.msix` and `claudeos-test-ARM64.cer`. Trust the `.cer` once
