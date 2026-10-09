@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claudeos"
+version = "0.0.1"
+description = "Phase 0 prototype of an intent-centric OS layer: plan, preview, consent, then act."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+claude = ["anthropic>=1.12,<2"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+claudeos = "claudeos.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
