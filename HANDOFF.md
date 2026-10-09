@@ -16,7 +16,7 @@ concept.
 | Item | Where | State |
 |---|---|---|
 | Python reference (Phase 0) | `src/claudeos/`, `tests/` | 23 tests. The executable spec the C# core was ported from; plans have byte-identical digests in both |
-| **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 434 xUnit tests (all pass on Linux; the first 248 also passed on Windows in CI, the rest are waiting on Actions billing). Zero dependencies; Native AOT verified in CI |
+| **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 434 xUnit tests, passing on Linux and on Windows in CI. Zero dependencies; Native AOT verified in CI |
 | Claude adapter | `windows/src/ClaudeOS.Claude` | The only reference to the official Anthropic SDK, behind `IModelClient`. Tested against a fake API; **never run against the live API** (no key in CI) |
 | CLI | `windows/src/ClaudeOS.Cli` | `do`, `apply`, `undo`, `log`, `chart`, `route`, `theme`, `demo-data`. Runs the whole core on any OS |
 | **Windows shell** | `windows/src/ClaudeOS.Shell` | WinUI 3 on Windows App SDK 2.5.1: Intent Bar, presence orb, subject-only chart windows, approval window with hold-to-approve, widget windows, key entry, tray, device check, a self-test. Compiles for x64 and ARM64 in CI and packages as a signed MSIX. Compiles, installs and passes its own self-test on a Windows desktop in CI; **not yet run on your Surface** |
@@ -48,31 +48,17 @@ You asked for no questions, so these defaults were taken; each is easy to change
 
 ## For you (the owner)
 
-0. **GitHub Actions needs attention first.** The last commits' jobs fail within two seconds
-   with "the job was not started because recent account payments have failed or your
-   spending limit needs to be increased". This build's heavy use of Windows runners (which
-   bill at twice the rate), plus every push running everything twice (once for the push, once
-   for the pull request), used up the account's Actions allowance. Nothing is wrong with the
-   code: the last commit that ran, `489180f`, had all five workflow runs green (233 then 248
-   tests, both Windows compiles, the signed MSIX, and the self-test on a Windows desktop).
-   Raise the spending limit or wait for the monthly reset, then re-run. The workflows have
-   since been made cheaper: they no longer run on both push and pull request, the Windows
-   package job runs only when the app or packaging changes (or on demand from the Actions
-   tab), and the Native AOT probe runs only on demand.
-
-   **A third way out, and it is your decision:** the repository is currently private, and
-   GitHub-hosted runners (Windows included) are free and unmetered for public repositories. If
-   you were going to open-source it anyway, making it public ends the billing problem. Before you
-   do: the working tree and the full history were scanned for keys, tokens, private keys and
-   certificates and nothing was found (the signing certificate and API key only ever live in
-   secrets and the Credential Locker); `LICENSE` (Apache-2.0) and `NOTICE` (the trademark note) are
-   in place; and the name still needs the decision described above, because "Claude" is
-   Anthropic's trademark. `research_notes/` and `reports/` were read through for publication: they
-   are public-source research, and the few third-party people's email addresses they quoted from
-   package registries have been removed; keep or drop the rest as you like. The session that built
-   this cannot change visibility (its GitHub tools have no repository-settings call, and the
-   command-line token is invalid), so that one step is yours: **Settings → General → Danger Zone →
-   Change visibility → Public**. After that, re-run the failed jobs on the pull request.
+0. **Published, and CI is green.** The repository is public and every job passed on
+   `64c2d8d`: the Python reference, the core on Linux and Windows, the design
+   sync, the Native AOT build, both Windows compiles of the shell, and the signed MSIX for x64
+   and ARM64. That includes the shell changes made after `489180f` (habit persistence and the
+   on-device classifier in the bar), which had not been compiled before. Still to do on the
+   GitHub side: turn on **private vulnerability reporting** (Settings → Code security) because
+   [SECURITY.md](SECURITY.md) points reporters there; decide the name, because "Claude" is
+   Anthropic's trademark ([NOTICE](NOTICE)); and merge or retarget the pull request (its base is
+   `main`; the default branch is currently the working branch). `research_notes/` and `reports/`
+   were read through before publication: they are public-source research, and the few
+   third-party email addresses they quoted from package registries were removed.
 
 1. **Install it on the Surface.** Releases → **Latest CI build** (a rolling pre-release
    the package workflow refreshes on every push): download
