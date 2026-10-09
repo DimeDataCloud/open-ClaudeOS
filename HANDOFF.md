@@ -31,8 +31,8 @@ concept.
 - **CI is green.** Every job passes at `4647a75`, including the signed MSIX for x64 and ARM64
   and the install-and-self-test on a Windows desktop (which also takes the screenshots in
   `docs/images`). The rolling **Latest CI build** release carries the packages from that run.
-- **Native AOT of the shell, measured again.** The on-demand probe (run by hand from the Actions
-  tab, *Package (Windows)* → *Run workflow*) published the shell for `win-x64` without errors.
+- **Native AOT of the shell, measured again.** The probe (it runs with every package build, as the
+  *Native AOT probe* job, and never gates anything) published the shell for `win-x64` without errors.
   The warnings are the Anthropic SDK's own trim and AOT warnings, plus three small ones in our
   code that are worth tidying (`PresenceOrb` should be `partial`; `IntentBarWindow.xaml.cs:112`
   compares references with `==`; `SelfTest.cs:163` dereferences a possible null). It compiles; it was not run,
