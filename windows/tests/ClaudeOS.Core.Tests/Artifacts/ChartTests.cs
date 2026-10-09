@@ -181,6 +181,24 @@ public sealed class ChartTests
     }
 
     [Fact]
+    public void A_custom_accent_colours_a_lone_series_but_never_collides_with_the_palette()
+    {
+        var blue = ThemeResolver.Resolve(Appearance.Light, new ThemeOverrides { Accent = "#2A78D6" });
+        var single = Recipe.Run(ChartSpec.Parse(SpecJson()), DataTable.FromCsv(Csv));
+        Assert.Contains(blue.Hex("accent.mark"), ChartRenderer.Render(single, new ChartStyle(blue, 640, 380)).Svg);
+
+        var spec = ChartSpec.Parse("""
+            {"type":"chart","data":{"source":"x.csv"},
+             "transform":[{"derive":{"as":"month","from":"date","unit":"month"}},{"group":{"by":["month","category"],"aggregate":[{"op":"sum","field":"amount","as":"spend"}]}}],
+             "mark":"line","x":{"field":"month"},"y":{"field":"spend"},"color":{"field":"category"}}
+            """);
+        var multi = ChartRenderer.Render(Recipe.Run(spec, DataTable.FromCsv(Csv)), new ChartStyle(blue, 640, 380)).Svg;
+        Assert.Contains(blue.Series[0], multi, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(blue.Series[1], multi, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(blue.Hex("accent.mark"), blue.Series[1]); // the accent is not part of the categorical palette
+    }
+
+    [Fact]
     public void Bars_are_anchored_square_to_the_baseline_with_a_rounded_data_end()
     {
         var data = Recipe.Run(ChartSpec.Parse(SpecJson()), DataTable.FromCsv(Csv));

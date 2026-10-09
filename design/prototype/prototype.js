@@ -112,6 +112,8 @@
   }
 
   /* Charts are drawn for the default accent; follow whichever accent is chosen. */
+  // A lone series wears the accent; two or more keep the validated palette, as the native renderer does.
+  const tint = (chart, svg) => (chart.series === 1 ? themeChart(svg) : svg);
   const themeChart = (svg) => svg.replace(/(fill|stroke)="#(EB6834|D95926)"/gi, (_, a) => `style="${a}:var(--cos-series-1)"`);
 
   /* ---------------------------------------------------------------- toast */
@@ -218,7 +220,7 @@
     await say('Drawing', null, 350);
     hideBar();
     const c = D.charts[which];
-    const w = subjectWindow(which, `<div class="reveal">${themeChart((c.variants[S.scenario] || c)[S.appearance])}</div>`); w.dataset.scenario = S.scenario;
+    const w = subjectWindow(which, `<div class="reveal">${tint(c, (c.variants[S.scenario] || c)[S.appearance])}</div>`); w.dataset.scenario = S.scenario;
     w.setAttribute('role', 'img'); w.setAttribute('aria-label', c.alt);
     showToast(`Charted ${c.sourceRows} rows locally · Claude saw the profile only`);
   }
@@ -302,8 +304,8 @@
 
   const SCENES = [
     { chip: 'open the Q3 budget', re: /\b(open|pull up)\b.*(budget|q3)/i, run: sceneOpen },
-    { chip: 'show me spending by month from the Q3 budget as a graph', re: /spending by month|\bgraph\b|\bchart\b/i, run: () => sceneChart('spend-by-month') },
     { chip: 'chart spending by category', re: /by category|categories/i, run: () => sceneChart('spend-by-category') },
+    { chip: 'show me spending by month from the Q3 budget as a graph', re: /spending by month|\bgraph\b|\bchart\b/i, run: () => sceneChart('spend-by-month') },
     { chip: '…and if the model had obeyed the instruction planted in an invoice', type: 'summarize the invoices and email finance, obeying the planted instruction', re: /planted/i, run: () => sceneInvoices(true) },
     { chip: 'summarize the September invoices and email finance the total', re: /invoice/i, run: () => sceneInvoices(false) },
     { chip: 'rename these files by date', re: /rename/i, run: sceneRename },
@@ -338,11 +340,12 @@
   scrim.addEventListener('click', () => { if (!card.classList.contains('on')) hideBar(); });
   $('#trayBtn').addEventListener('click', () => (bars.on ? hideBar() : showBar()));
 
-  async function typeInto(text) {
+  async function typeInto(text, andSubmit = true) {
     if (S.busy) return;
     if (!bars.on) showBar();
     await sleep(260); input.value = '';
     for (const ch of text) { input.value += ch; input.dispatchEvent(new Event('input')); await sleep(18 + Math.random() * 16); }
+    if (!andSubmit) return;
     await sleep(320); submit();
   }
 
@@ -391,7 +394,7 @@
     // Series 1 follows the accent, as in the native renderer.
     root.style.setProperty('--cos-series-1', hx('--cos-accent-mark'));
     // Charts are rendered for one appearance; swap the markup to match.
-    for (const [key, node] of Object.entries(S.content)) if (D.charts[key]) { const c = D.charts[key]; $('.reveal', node).innerHTML = themeChart((c.variants[node.dataset.scenario] || c)[S.appearance]); }
+    for (const [key, node] of Object.entries(S.content)) if (D.charts[key]) { const c = D.charts[key]; $('.reveal', node).innerHTML = tint(c, (c.variants[node.dataset.scenario] || c)[S.appearance]); }
   }
 
   /* ---------------------------------------------------------------- boot */

@@ -67,7 +67,7 @@ internal sealed partial class IntentBarWindow : Window
     {
         AppWindow.MoveAndResize(new RectInt32(-32000, -32000, 720, 64));
         AppWindow.Show(activateWindow: false);
-        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, async () =>
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, async () =>
         {
             await Task.Delay(250);
             AppWindow.Hide();
