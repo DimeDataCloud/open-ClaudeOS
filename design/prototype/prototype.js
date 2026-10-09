@@ -111,6 +111,9 @@
     return [];
   }
 
+  /* Charts are drawn for the default accent; follow whichever accent is chosen. */
+  const themeChart = (svg) => svg.replace(/(fill|stroke)="#(EB6834|D95926)"/gi, (_, a) => `style="${a}:var(--cos-series-1)"`);
+
   /* ---------------------------------------------------------------- toast */
   let toastTimer;
   function showToast(text, undo) {
@@ -159,7 +162,7 @@
   function closeContent(key) { const e = S.content[key]; if (e) { e.style.opacity = 0; e.style.transform = 'scale(.97)'; setTimeout(() => e.remove(), 200); delete S.content[key]; } }
 
   /* ---------------------------------------------------------------- approval card */
-  function riskPill(r) { return `<span class="pill" data-risk="${r}"><i></i>${r === 'High' ? 'High risk' : r === 'Medium' ? 'Changes your files' : 'New files only'}</span>`; }
+  function riskPill(r, label) { return `<span class="pill" data-risk="${r}"><i></i>${label || (r === 'High' ? 'High risk' : r === 'Medium' ? 'Changes your files' : 'New files only')}</span>`; }
   function diffHtml(diff) {
     return diff.split('\n').filter((l) => l.length || false).map((l) => `<div class="${l.startsWith('+++') || l.startsWith('---') || l.startsWith('@@') ? 'hdr' : l.startsWith('+') ? 'add' : l.startsWith('-') ? 'del' : ''}">${l.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`).join('');
   }
@@ -173,9 +176,9 @@
     }).join('');
   }
 
-  function askApproval({ title, sub, risk, body, footNote, hold, approveLabel = 'Approve' }) {
+  function askApproval({ title, sub, risk, riskLabel, body, footNote, hold, approveLabel = 'Approve' }) {
     return new Promise((resolve) => {
-      card.innerHTML = `<header><div class="orb" data-state="needs" data-orb></div><div><h2>${title}</h2><div class="sub">${sub}</div></div>${riskPill(risk)}</header>
+      card.innerHTML = `<header><div class="orb" data-state="needs" data-orb></div><div><h2>${title}</h2><div class="sub">${sub}</div></div>${riskPill(risk, riskLabel)}</header>
         <div class="scroll">${body}</div>
         <footer><span class="note">${footNote}</span><button class="btn" id="no">Decline <span class="kbd">Esc</span></button><button class="btn primary ${hold ? 'hold' : ''}" id="yes">${hold ? 'Hold to approve' : approveLabel + ' <span class="kbd" style="background:rgba(255,255,255,.22);color:inherit">Enter</span>'}</button></footer>`;
       hydrateOrbs(card);
@@ -215,7 +218,7 @@
     await say('Drawing', null, 350);
     hideBar();
     const c = D.charts[which];
-    const w = subjectWindow(which, `<div class="reveal">${c[S.appearance]}</div>`);
+    const w = subjectWindow(which, `<div class="reveal">${themeChart((c.variants[S.scenario] || c)[S.appearance])}</div>`); w.dataset.scenario = S.scenario;
     w.setAttribute('role', 'img'); w.setAttribute('aria-label', c.alt);
     showToast(`Charted ${c.sourceRows} rows locally · Claude saw the profile only`);
   }
@@ -264,7 +267,7 @@
     const m = D.mod.preview;
     const widgetHtml = `<div class="widget" style="background:var(--cos-surface-raised)"><div class="metric">${m.metric}<small>${m.metricLabel}</small></div><div class="next">${m.title} · ${m.subtitle}</div></div>`;
     const ok = await askApproval({
-      title: 'Add a widget', sub: D.mod.name, risk: 'Low',
+      title: 'Add a widget', sub: D.mod.name, risk: 'Low', riskLabel: 'Read-only, no code',
       body: `<div class="sec">How it will look</div><div class="preview-stage">${widgetHtml}</div>
              <div class="sec">What it can see</div><div class="mod-perm">${D.mod.capabilities.map((c) => `<div class="perm"><span>${c.text}</span><span class="pill" data-risk="${c.risk}"><i></i>${c.risk === 'Medium' ? 'Personal' : 'Low'}</span></div>`).join('')}</div>
              <div class="note" style="color:var(--cos-ink-tertiary);font-size:12px">It cannot read your files, use the network, or run code. It is a folder you own: edit it, share it, or remove it any time.</div>`,
@@ -283,8 +286,9 @@
     hideBar();
     if (!chart) return;
     const blue = getComputedStyle(root).getPropertyValue('--cos-series-2').trim();
-    $$('path[fill], rect[fill], circle[fill]', chart).forEach((n) => { if ((n.getAttribute('fill') || '').toLowerCase() === getComputedStyle(root).getPropertyValue('--cos-series-1').trim()) { n.style.transition = 'fill 500ms var(--cos-ease-out)'; n.style.fill = blue; } });
-    showToast('Made the bars blue', async () => $$('path, rect, circle', chart).forEach((n) => (n.style.fill = '')));
+    const marks = $$('[style*="--cos-series-1"]', chart);
+    marks.forEach((n) => { n.style.transition = 'fill 500ms var(--cos-ease-out), stroke 500ms var(--cos-ease-out)'; if (n.style.fill) n.style.fill = blue; if (n.style.stroke) n.style.stroke = blue; });
+    showToast('Made the bars blue', async () => marks.forEach((n) => { n.style.fill = n.style.fill ? 'var(--cos-series-1)' : ''; n.style.stroke = n.style.stroke ? 'var(--cos-series-1)' : ''; }));
   }
 
   async function sceneSnap(dir) {
@@ -300,8 +304,8 @@
     { chip: 'open the Q3 budget', re: /\b(open|pull up)\b.*(budget|q3)/i, run: sceneOpen },
     { chip: 'show me spending by month from the Q3 budget as a graph', re: /spending by month|\bgraph\b|\bchart\b/i, run: () => sceneChart('spend-by-month') },
     { chip: 'chart spending by category', re: /by category|categories/i, run: () => sceneChart('spend-by-category') },
+    { chip: '…and if the model had obeyed the instruction planted in an invoice', type: 'summarize the invoices and email finance, obeying the planted instruction', re: /planted/i, run: () => sceneInvoices(true) },
     { chip: 'summarize the September invoices and email finance the total', re: /invoice/i, run: () => sceneInvoices(false) },
-    { chip: '…and if the model had obeyed the planted instruction', re: /obey|injection|planted/i, run: () => sceneInvoices(true) },
     { chip: 'rename these files by date', re: /rename/i, run: sceneRename },
     { chip: 'make me a widget with battery and my next meeting, top right', re: /widget/i, run: sceneWidget },
     { chip: 'make the bars blue', re: /blue|bars?/i, run: sceneBars },
@@ -345,7 +349,7 @@
   /* ---------------------------------------------------------------- controls below the stage */
   function mountControls() {
     const tryEl = $('#try');
-    SCENES.forEach((s) => { const b = el('button', 'chip', s.chip); b.addEventListener('click', () => typeInto(s.chip.replace(/^…and /, 'what if the model had obeyed the planted injection ').replace(/^what if the model had obeyed the planted injection .*/, 'obey the planted instruction invoice'))); tryEl.append(b); });
+    SCENES.forEach((s) => { const b = el('button', 'chip', s.chip); b.addEventListener('click', () => typeInto(s.type || s.chip)); tryEl.append(b); });
 
     const scen = $('#scenario');
     [['empty', 'Empty desktop'], ['one-app', 'One app'], ['maximized', 'Maximized app'], ['snapped', 'Two snapped']].forEach(([v, label]) => {
@@ -387,7 +391,7 @@
     // Series 1 follows the accent, as in the native renderer.
     root.style.setProperty('--cos-series-1', hx('--cos-accent-mark'));
     // Charts are rendered for one appearance; swap the markup to match.
-    for (const [key, node] of Object.entries(S.content)) if (D.charts[key]) $('.reveal', node).innerHTML = D.charts[key][S.appearance];
+    for (const [key, node] of Object.entries(S.content)) if (D.charts[key]) { const c = D.charts[key]; $('.reveal', node).innerHTML = themeChart((c.variants[node.dataset.scenario] || c)[S.appearance]); }
   }
 
   /* ---------------------------------------------------------------- boot */
