@@ -41,6 +41,9 @@ pip install -e ".[dev]" && pytest
 # design tokens: edit design/tokens.json, then
 cd design && npm ci && node build-tokens.mjs        # regenerates CSS, XAML and C#
 node build-tokens.mjs --check                        # what CI runs
+
+# documentation: every relative link and heading anchor must resolve
+python tools/check_links.py
 ```
 
 The Shell only builds on Windows. You do not need Windows to work on the core,
