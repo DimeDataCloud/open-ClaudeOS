@@ -136,8 +136,8 @@ measures what this build can measure and reports it with the target from the
 - **NPU routing, Windows OCR placement, Agent Launcher registration, global
   hotkey conflicts** are on the M0 list; the device check reports what it can
   and says plainly when something is not wired up yet.
-- **Native AOT.** The core is written to be trim- and AOT-compatible and the
-  shell avoids reflection-based marshalling, but a published AOT build has not
-  been verified yet.
+- **Native AOT of the shell.** The core and CLI are verified as native binaries in
+  CI; the shell is not AOT, because the official Anthropic SDK needs reflection
+  (see the [stack decision](stack-decision.md)).
 - **Accessibility with a real screen reader** (Narrator) is designed for
   (names, roles, keyboard paths) but not yet verified.
