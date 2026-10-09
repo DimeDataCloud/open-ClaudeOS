@@ -157,7 +157,7 @@ public sealed class PresenceMachine(TimeProvider? clock = null, bool reducedMoti
     private PresenceFrame Done(Finished f)
     {
         _doneAt = _clock.GetUtcNow();
-        return Make(PresenceState.Done, f.Message, f.Undoable ? "Ctrl+Z to undo" : null, 0.6);
+        return Make(PresenceState.Done, f.Message, f.Undoable ? "Say \"undo\" to take it back" : null, 0.6);
     }
 
     private PresenceFrame OnTick(DateTimeOffset now)

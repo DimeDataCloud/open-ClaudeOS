@@ -52,5 +52,8 @@ internal sealed class FileIndex
         });
     }
 
+    /// <summary>The most recently changed files, newest first.</summary>
+    public IReadOnlyList<string> Recent(int take) => [.. _files.OrderByDescending(f => f.Modified).Take(take).Select(f => f.Path)];
+
     public IReadOnlyList<FileMatch> Search(string query, int take = 6) => FileFinder.Rank(query, _files, DateTimeOffset.UtcNow, take);
 }

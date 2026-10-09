@@ -1,3 +1,4 @@
+using ClaudeOS.Core.Design;
 using ClaudeOS.Core.Planning;
 using ClaudeOS.Core.Presence;
 using ClaudeOS.Core.Safety;
@@ -33,10 +34,21 @@ public partial class App : Application
         _bar = new IntentBarWindow(Services.Bar);
         _bar.Prewarm();
 
+        var ui = new ShellUi(_dispatcher, Services.Placer, Services.Bar.Presence);
+        Services.Bar.Agent = new AgentService(
+            Services.Bar.Presence,
+            Services.State,
+            Services.Ledger,
+            Services.Files,
+            ui,
+            () => RequestedTheme == ApplicationTheme.Dark ? Appearance.Dark : Appearance.Light);
+        Services.Bar.Agent.RestoreWidgets();
+
         _tray = new TrayHost();
         _tray.SummonRequested += () => _dispatcher.TryEnqueue(Summon);
         _tray.QuitRequested += () => _dispatcher.TryEnqueue(Exit);
-        _tray.DiagnosticsRequested += () => _dispatcher.TryEnqueue(() => Services.Bar.Presence.Handle(new Suggest("Device check is coming in the next build")));
+        _tray.DiagnosticsRequested += () => _dispatcher.TryEnqueue(async () => await new DiagnosticsWindow(() => _bar.LastSummonMilliseconds > 0 ? _bar.LastSummonMilliseconds : null, () => Services.Files.Count, Services.Bar.Presence.ReducedMotion).RunAsync());
+        _tray.ConnectRequested += () => _dispatcher.TryEnqueue(async () => await new KeyWindow().AskAsync());
         _tray.Start(TryReadAsset("Square44x44Logo.targetsize-24_altform-unplated.png"));
         Services.Bar.Presence.Changed += frame => _tray.SetStatus(frame.Label.Length > 0 ? $"open-ClaudeOS: {frame.Label}" : "open-ClaudeOS");
         Services.Files.RefreshIfStale(TimeSpan.Zero);
@@ -72,6 +84,8 @@ internal sealed class AppServices
 
     public required BarController Bar { get; init; }
 
+    public required Placer Placer { get; init; }
+
     public required TokenLedger Ledger { get; init; }
 
     public static AppServices Create(bool reducedMotion)
@@ -79,12 +93,14 @@ internal sealed class AppServices
         var state = new StateDir();
         var files = new FileIndex();
         var presence = new PresenceMachine(reducedMotion: reducedMotion);
+        var placer = new Placer(state);
         return new AppServices
         {
             State = state,
             Files = files,
             Ledger = new TokenLedger(Path.Combine(state.Path, "tokens.jsonl"), new Budget(DailyUsd: 5, MonthlyUsd: 60)),
-            Bar = new BarController(presence, files, state),
+            Placer = placer,
+            Bar = new BarController(presence, files, state, placer),
         };
     }
 }

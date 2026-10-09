@@ -122,7 +122,7 @@ internal static class Do
         var dir = $"Artifacts/{DateTime.Now:yyyy-MM-dd}";
         var artifacts = new Overlay(opts.Get("artifacts") ?? Path.Combine(workspace.Root));
         var plan = new Plan($"chart: {request}", "Saves the chart recipe and its picture as new files.", [
-            new WriteFile($"{dir}/{slug}.chart.json", SpecJson(data.Spec, workspace.Root)),
+            new WriteFile($"{dir}/{slug}.chart.json", ChartSpecJson.Write(data.Spec) + "\n"),
             new WriteFile($"{dir}/{slug}.svg", render.Svg),
         ]);
         var result = await Creations.ApplyAsync(plan, artifacts, policy, state);
@@ -131,9 +131,6 @@ internal static class Do
         Console.WriteLine($"Saved {dir}/{slug}.svg and {slug}.chart.json. Undo with: claudeos undo {result.CommitId}");
         return 0;
     }
-
-    private static string SpecJson(ChartSpec spec, string root) =>
-        $"{{\n  \"type\": \"chart\",\n  \"title\": {System.Text.Json.JsonSerializer.Serialize(spec.Title ?? "")},\n  \"data\": {{ \"source\": {System.Text.Json.JsonSerializer.Serialize(spec.DataSource)} }},\n  \"mark\": \"{spec.Mark.ToString().ToLowerInvariant()}\"\n}}\n";
 
     private static async Task<int> MakeModAsync(string request, ArtifactMaker maker, Options opts, StateDir state)
     {
