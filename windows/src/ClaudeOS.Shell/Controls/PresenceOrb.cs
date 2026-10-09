@@ -22,7 +22,7 @@ namespace ClaudeOS.Shell.Controls;
 ///   done        settles, ring complete
 ///   refused     steady and dim: no shaking, no alarm
 /// </summary>
-public sealed class PresenceOrb : Grid
+public sealed partial class PresenceOrb : Grid
 {
     private Compositor? _compositor;
     private ContainerVisual? _root;

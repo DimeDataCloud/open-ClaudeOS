@@ -109,7 +109,7 @@ internal sealed partial class IntentBarWindow : Window
     /// <summary>What the bar looks like right now. For the self-test.</summary>
     public BarProbe Probe()
     {
-        var focused = FocusManager.GetFocusedElement(Content.XamlRoot) == Input;
+        var focused = ReferenceEquals(FocusManager.GetFocusedElement(Content.XamlRoot), Input);
         return new BarProbe(
             AppWindow.IsVisible,
             AppWindow.Size.Width,

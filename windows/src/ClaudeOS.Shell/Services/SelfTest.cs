@@ -160,7 +160,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
             var drew = Controls.TreeText.Of(card!.Content, 20);
             card.PressForTest();
             var message = await run;
-            Expect(message.StartsWith("Done", StringComparison.Ordinal), $"approving installs the rule (said: {message})");
+            Expect(message is not null && message.StartsWith("Done", StringComparison.Ordinal), $"approving installs the rule (said: {message})");
             Expect(Directory.Exists(Path.Combine(_workspace, "state", "mods", HabitRules.IdOf(offer))), "the rule is a mod folder the person owns");
             Expect(services.Habits.Pending is null, "the offer is cleared once answered");
 
