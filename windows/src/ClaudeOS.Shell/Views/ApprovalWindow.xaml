@@ -14,7 +14,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Spacing="6">
-            <TextBlock x:Name="Title" Style="{StaticResource CosTitleText}" TextWrapping="Wrap" />
+            <TextBlock x:Name="TitleText" Style="{StaticResource CosTitleText}" TextWrapping="Wrap" />
             <TextBlock x:Name="Claim" Style="{StaticResource CosCaptionText}" TextWrapping="Wrap" Visibility="Collapsed" />
         </StackPanel>
 

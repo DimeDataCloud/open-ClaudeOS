@@ -67,7 +67,7 @@ internal sealed partial class ApprovalWindow : Window
                 BeginApprove();
             }
         };
-        ApproveHost.AddHandler(PointerPressedEvent, new PointerEventHandler((_, e) =>
+        ApproveHost.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, e) =>
         {
             if (_model.HoldToApprove)
             {
@@ -75,14 +75,14 @@ internal sealed partial class ApprovalWindow : Window
                 BeginApprove();
             }
         }), true);
-        ApproveHost.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, e) =>
+        ApproveHost.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler((_, e) =>
         {
             ApproveHost.ReleasePointerCapture(e.Pointer);
             EndApprove();
         }), true);
         ApproveHost.PointerCanceled += (_, _) => EndApprove();
         ApproveHost.PointerCaptureLost += (_, _) => EndApprove();
-        ApproveHost.AddHandler(KeyDownEvent, new KeyEventHandler((_, e) =>
+        ApproveHost.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler((_, e) =>
         {
             if (_model.HoldToApprove && e.Key is VirtualKey.Enter or VirtualKey.Space && !e.KeyStatus.WasKeyDown)
             {
@@ -90,7 +90,7 @@ internal sealed partial class ApprovalWindow : Window
                 BeginApprove();
             }
         }), true);
-        ApproveHost.AddHandler(KeyUpEvent, new KeyEventHandler((_, e) =>
+        ApproveHost.AddHandler(UIElement.KeyUpEvent, new KeyEventHandler((_, e) =>
         {
             if (_model.HoldToApprove && e.Key is VirtualKey.Enter or VirtualKey.Space)
             {
@@ -128,7 +128,7 @@ internal sealed partial class ApprovalWindow : Window
 
     private void Fill()
     {
-        Title.Text = _model.Title;
+        TitleText.Text = _model.Title;
         if (_model.ModelClaim is { } claim)
         {
             Claim.Text = $"Claude says: {claim}";
