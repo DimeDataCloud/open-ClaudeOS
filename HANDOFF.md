@@ -67,8 +67,12 @@ You asked for no questions, so these defaults were taken; each is easy to change
    certificates and nothing was found (the signing certificate and API key only ever live in
    secrets and the Credential Locker); `LICENSE` (Apache-2.0) and `NOTICE` (the trademark note) are
    in place; and the name still needs the decision described above, because "Claude" is
-   Anthropic's trademark. Also look through `research_notes/` and `reports/` and keep whatever
-   you are happy to publish. Nothing here changes visibility for you.
+   Anthropic's trademark. `research_notes/` and `reports/` were read through for publication: they
+   are public-source research, and the few third-party people's email addresses they quoted from
+   package registries have been removed; keep or drop the rest as you like. The session that built
+   this cannot change visibility (its GitHub tools have no repository-settings call, and the
+   command-line token is invalid), so that one step is yours: **Settings → General → Danger Zone →
+   Change visibility → Public**. After that, re-run the failed jobs on the pull request.
 
 1. **Install it on the Surface.** Releases → **Latest CI build** (a rolling pre-release
    the package workflow refreshes on every push): download
