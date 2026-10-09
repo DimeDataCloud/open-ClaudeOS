@@ -96,6 +96,42 @@ public static partial class IntentGrammar
         return false;
     }
 
+    private static readonly HashSet<string> FillerWords = new(StringComparer.Ordinal)
+    {
+        "i", "id", "i'd", "i'm", "im", "ill", "need", "want", "like", "to", "see", "look", "looking", "at", "the", "a", "an", "my", "me", "get",
+        "bring", "pull", "show", "let", "lets", "can", "could", "would", "you", "please", "thanks", "thank", "find", "search", "locate", "where",
+        "is", "are", "was", "did", "does", "do", "which", "have", "has", "got", "any", "anything", "about", "in", "on", "up", "back", "take",
+        "go", "open", "load", "fetch", "display", "view", "read", "check", "track", "down", "hunt", "dig", "through", "whatever", "there",
+        "it", "that", "this", "those", "these", "for", "of", "with", "containing", "contain", "mentioning", "mentions", "mention", "file",
+        "files", "doc", "document", "documents", "after", "misplaced", "lost", "cant", "can't", "somewhere", "ended",
+    };
+
+    /// <summary>The words that name the thing asked for, with the filler of a polite request removed
+    /// ("i need the employee handbook" becomes "employee handbook"). Empty if nothing is left.</summary>
+    public static string QueryOf(string text)
+    {
+        var words = text.ToLowerInvariant()
+            .Split([' ', ',', '.', '?', '!', ';', ':', '"', '“', '”', '(', ')'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => !FillerWords.Contains(w));
+        return string.Join(' ', words);
+    }
+
+    /// <summary>What kind of thing a "make" request names, by its nouns (a chart word, a table word...).</summary>
+    public static MakeKind MakeKindOf(string text)
+    {
+        var s = Normalize(text);
+        if (ModRx().IsMatch(s))
+        {
+            return s.Contains("theme", StringComparison.Ordinal) ? MakeKind.Theme : s.Contains("widget", StringComparison.Ordinal) ? MakeKind.Widget : MakeKind.Mod;
+        }
+
+        return ChartRx().IsMatch(s) ? MakeKind.Chart
+            : DiagramRx().IsMatch(s) ? MakeKind.Diagram
+            : TableRx().IsMatch(s) ? MakeKind.Table
+            : ReportRx().IsMatch(s) ? MakeKind.Report
+            : MakeKind.Other;
+    }
+
     private static bool TryMake(string s, string raw, out MakeIntent intent)
     {
         intent = null!;
