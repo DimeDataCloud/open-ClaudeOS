@@ -60,6 +60,16 @@ You asked for no questions, so these defaults were taken; each is easy to change
    package job runs only when the app or packaging changes (or on demand from the Actions
    tab), and the Native AOT probe runs only on demand.
 
+   **A third way out, and it is your decision:** the repository is currently private, and
+   GitHub-hosted runners (Windows included) are free and unmetered for public repositories. If
+   you were going to open-source it anyway, making it public ends the billing problem. Before you
+   do: the working tree and the full history were scanned for keys, tokens, private keys and
+   certificates and nothing was found (the signing certificate and API key only ever live in
+   secrets and the Credential Locker); `LICENSE` (Apache-2.0) and `NOTICE` (the trademark note) are
+   in place; and the name still needs the decision described above, because "Claude" is
+   Anthropic's trademark. Also look through `research_notes/` and `reports/` and keep whatever
+   you are happy to publish. Nothing here changes visibility for you.
+
 1. **Install it on the Surface.** Releases → **Latest CI build** (a rolling pre-release
    the package workflow refreshes on every push): download
    `ClaudeOS.Shell_*_ARM64.msix` and `claudeos-test-ARM64.cer`. Trust the `.cer` once
