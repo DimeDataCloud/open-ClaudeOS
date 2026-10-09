@@ -163,8 +163,8 @@ This is a pre-release. What has been verified, and by what:
 
 Open decisions for the owner are in [HANDOFF.md](HANDOFF.md): the license is
 Apache-2.0 (the recommended default, taken so the project can be shared), and
-the name needs thought before a wide release because "Claude" is Anthropic's
-trademark.
+the name is kept as open-ClaudeOS, but "Claude" is Anthropic's trademark, so
+whether Anthropic is comfortable with it is still open.
 
 ## Documents
 

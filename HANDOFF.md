@@ -43,16 +43,23 @@ concept.
   ever available), a restart with a saved `habits.json` on Windows, and hands-on use.
 - **Not built:** web mods, a learned NPU model, a graphical Linux shell, dedicated windows for
   table, report and diagram artifacts.
-- **Open questions for you:** the name, private vulnerability reporting, and the PR/default
-  branch arrangement (all under "For you" below).
+- **Open questions for you:** whether Anthropic is comfortable with the name, private
+  vulnerability reporting, and the default branch (all under "For you" below).
 
 ## Decisions made in this session
 
 You asked for no questions, so these defaults were taken; each is easy to change.
 
 - **License: Apache-2.0** (the recommended option). `LICENSE`, `NOTICE`.
-- **Name unchanged.** "Claude" is Anthropic's trademark; the README says so. Settle
-  the name, or get permission, before a wide release.
+- **Name kept: open-ClaudeOS** (your decision, 2026-10-09), as a free, open-source, independent
+  project. This is not a settled legal question. "Claude" is Anthropic's trademark; its
+  [trademark guidelines](https://www.anthropic.com/legal/trademark-guidelines) allow use only as
+  Anthropic permits and bar anything that implies sponsorship or endorsement, they have no carve-out for
+  open-source or free projects, and a name like "ClaudeOS" can read as an Anthropic product. The README
+  and [NOTICE](NOTICE) say plainly that the project is independent and not endorsed. Before a wide
+  announcement, ask Anthropic (the guidelines give marketing@anthropic.com). The fallback is a rename,
+  which is cheapest now: the name is in the C# namespaces, the package identity, the `claudeos` command
+  and the docs.
 - **Stack as decided, with two measured changes** (details: [stack-decision.md, "As built"](docs/stack-decision.md#as-built-2026-10-09)):
   frameless WinUI windows instead of XAML islands in Win32 popups, and **no Native
   AOT for the shell**: the official Anthropic SDK needs reflection-based JSON and
@@ -77,7 +84,7 @@ You asked for no questions, so these defaults were taken; each is easy to change
    default branch to `main` (Settings → Branches; it is still the working branch
    `ccr-6c2d7909-nzeecq`, which can then be deleted); turn on **private vulnerability reporting**
    (Settings → Code security) because [SECURITY.md](SECURITY.md) points reporters there; and
-   decide the name, because "Claude" is Anthropic's trademark ([NOTICE](NOTICE)). `research_notes/` and `reports/`
+   ask Anthropic about the name before announcing widely (see "Name kept" below). `research_notes/` and `reports/`
    were read through before publication: they are public-source research, and the few
    third-party email addresses they quoted from package registries were removed.
 
