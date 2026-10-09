@@ -132,7 +132,7 @@ This is a pre-release. What has been verified, and by what:
 | Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 233 tests on Linux and Windows; 23 in the Python reference |
 | Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
 | Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
-| Windows shell | **Compiles for x64 and ARM64 in CI and packages as a signed MSIX.** It has **not yet been run on a device**; expect first-run polish bugs. That is milestone M0 |
+| Windows shell | **Compiles for x64 and ARM64 in CI, packages as a signed MSIX, and in CI is installed on a Windows desktop and tests itself** (bar, chart, widget, approval card with a planted email, hold-to-approve). It has **not yet been run on a Surface**; expect polish bugs in how it looks and feels. That is milestone M0 |
 | NPU routing, Agent Launcher | Designed; M0 measures them. The device check says plainly what is not wired up yet |
 | Native AOT | **Core and CLI: verified** (CI publishes and runs the native binary). **Shell: no**: the official Anthropic SDK needs reflection-based JSON, so the shell runs on the regular .NET runtime. [Details](docs/stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk) |
 | Scripted and web mods | Designed, deliberately refused until their sandboxes exist. Declarative mods (no code) work |
