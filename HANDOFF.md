@@ -33,9 +33,9 @@ concept.
   `docs/images`). The rolling **Latest CI build** release carries the packages from that run.
 - **Native AOT of the shell, measured again.** The probe (it runs with every package build, as the
   *Native AOT probe* job, and never gates anything) published the shell for `win-x64` without errors.
-  The warnings are the Anthropic SDK's own trim and AOT warnings, plus three small ones in our
-  code that are worth tidying (`PresenceOrb` should be `partial`; `IntentBarWindow.xaml.cs:112`
-  compares references with `==`; `SelfTest.cs:163` dereferences a possible null). It compiles; it was not run,
+  The warnings are the Anthropic SDK's own trim and AOT warnings; the three small ones in our
+  code (`PresenceOrb` not `partial`, a reference comparison with `==` in `IntentBarWindow`, a possible
+  null in `SelfTest`) have been fixed. It compiles; it was not run,
   and it would fail at the first Claude request, so the shell still ships on the regular runtime.
 - **Tested:** 434 xUnit tests (Linux and Windows), 23 Python tests, about 91% line coverage of the
   hand-written core, injection and fuzz suites on the safety code, differential tests against Python.
