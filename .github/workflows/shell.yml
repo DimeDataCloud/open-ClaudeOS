@@ -30,4 +30,11 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Build the shell
-        run: dotnet build src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -p:Platform=${{ matrix.platform }} -v:minimal
+        run: dotnet build src/ClaudeOS.Shell/ClaudeOS.Shell.csproj -c Release -p:Platform=${{ matrix.platform }} -v:minimal "-flp:logfile=shell-errors.log;errorsonly"
+      - name: What went wrong
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path shell-errors.log) {
+            Get-Content shell-errors.log | ForEach-Object { ($_ -replace '^.*\\windows\\', '') -replace '\[D:\\a.*$', '' } | Sort-Object -Unique | Select-Object -First 25
+          }
