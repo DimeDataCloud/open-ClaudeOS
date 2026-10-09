@@ -67,6 +67,26 @@ public sealed class AnthropicModelClient : IModelClient
         return FromMessage(response);
     }
 
+    /// <summary>The tool input as a JSON object, written by hand so no reflection-based serializer is needed (Native AOT).</summary>
+    private static JsonElement InputElement(IReadOnlyDictionary<string, JsonElement> input)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            foreach (var (name, value) in input)
+            {
+                writer.WritePropertyName(name);
+                value.WriteTo(writer);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        using var doc = JsonDocument.Parse(stream.ToArray());
+        return doc.RootElement.Clone();
+    }
+
     private static ModelResponse FromMessage(Message response)
     {
         var parts = ImmutableArray.CreateBuilder<ContentPart>();
@@ -88,7 +108,7 @@ public sealed class AnthropicModelClient : IModelClient
             {
                 try
                 {
-                    parts.Add(new ToolUsePart(use.ID, use.Name, JsonSerializer.SerializeToElement(use.Input)));
+                    parts.Add(new ToolUsePart(use.ID, use.Name, InputElement(use.Input)));
                 }
                 catch (JsonException e)
                 {
