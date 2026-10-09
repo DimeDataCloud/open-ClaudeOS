@@ -19,7 +19,7 @@ internal sealed record BarResult(ResultKind Kind, string Title, string Subtitle,
 /// </summary>
 internal sealed class BarController(PresenceMachine presence, FileIndex files, StateDir state, Placer placer, HabitService habits)
 {
-    private readonly IntentRouter _router = new();
+    private readonly IntentRouter _router = new(new LocalIntentClassifier());
     private LayoutHistory History => placer.History;
     private nint _previousForeground;
 

@@ -15,7 +15,7 @@ container.
 | Layer | How it is checked | Where it runs |
 |---|---|---|
 | Python reference (Phase 0) | `pytest`, 23 tests | CI (Ubuntu, Python 3.11 and 3.13) |
-| Core logic | xUnit, 393 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
+| Core logic | xUnit, 412 tests (`dotnet test windows/tests/ClaudeOS.Core.Tests`) | CI (Ubuntu and Windows) |
 | Anthropic SDK adapter | xUnit against a local fake Messages API (`HttpListener`) | CI |
 | Shell compiles | `dotnet build` of the WinUI project, x64 and ARM64 | CI (Windows runner) |
 | Design tokens in sync | `node design/build-tokens.mjs --check` | CI |
@@ -83,6 +83,15 @@ What they pin down:
 - **Habits that survive a restart** (`Layout/HabitPersistenceTests`): a habit in progress keeps
   counting across a restart, an offer already made is never repeated, saving is stable, and a
   damaged, empty, hand-edited or random file gives a fresh tracker instead of an error.
+- **On-device routing** (`Intent/LocalIntentClassifierTests`): a naive Bayes classifier over words
+  and word pairs, trained at start-up on 180 phrases, sitting behind `IIntentClassifier`. It is
+  measured on phrases it never saw, in two sets: 74 *development* phrases that were used to choose
+  how cautious it is, and 69 *fresh* phrases written afterwards and looked at once. Fresh result:
+  right 58 of 69 (84%); at the router's 80% confidence bar it answers 35 of 69 and is right in all 35;
+  all 11 misses were low-confidence, so they go on to the cloud instead of being acted on. Chat
+  ("sing me a song") and file chores ("order a pizza", "rename my photos") are never confidently taken
+  for a command. Words it has never seen get zero confidence; the test files fail if any held-out
+  phrase leaks into the training data; classification takes well under a millisecond.
 - **Presence** (`Presence/`): the state machine, driven event by event, including
   offline and reduced-motion behaviour.
 - **Prompt injection.** `Prompt_injection_in_a_file_is_data_the_policy_still_contains`
@@ -196,7 +205,7 @@ measures what this build can measure and reports it with the target from the
   rejected the API key"). With a *valid* key nothing has been run: this
   repository's CI has none, by design, so the prompts have been reviewed but not
   exercised by a real model. The first run with a real key may need prompt tuning.
-- **NPU routing, Windows OCR placement, Agent Launcher registration, global
+- **NPU routing (the CPU classifier is built and measured; a learned NPU model is not), Windows OCR placement, Agent Launcher registration, global
   hotkey conflicts** are on the M0 list; the device check reports what it can
   and says plainly when something is not wired up yet.
 - **Native AOT of the shell.** The core and CLI are verified as native binaries in

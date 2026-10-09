@@ -83,6 +83,8 @@ jobs:
           cp -r examples/invoices-demo "$RUNNER_TEMP/demo"
           "$RUNNER_TEMP/aot/claudeos" route "can you please open the q3 budget" | tee route.txt
           grep -q OpenIntent route.txt
+          "$RUNNER_TEMP/aot/claudeos" route "i need a little widget for my battery level" | tee npu.txt
+          grep -q "via Npu" npu.txt
           "$RUNNER_TEMP/aot/claudeos" chart examples/charts/spend-by-month.chart.json --data examples/charts/q3-budget.csv --out "$RUNNER_TEMP/chart.svg" | tee chart.txt
           grep -q "Bar chart" chart.txt
           "$RUNNER_TEMP/aot/claudeos" apply examples/invoices-demo.plan.json --root "$RUNNER_TEMP/demo" --yes | tee apply.txt

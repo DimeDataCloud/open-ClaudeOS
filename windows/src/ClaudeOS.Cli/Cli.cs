@@ -205,7 +205,7 @@ public static class Cli
     private static async Task<int> RouteAsync(Options opts)
     {
         var text = string.Join(' ', opts.Positional);
-        var routing = await new IntentRouter().RouteAsync(text);
+        var routing = await new IntentRouter(new LocalIntentClassifier()).RouteAsync(text);
         Console.WriteLine($"{routing.Intent.GetType().Name} via {routing.Source} in {routing.Elapsed.TotalMilliseconds:0.00} ms");
         Console.WriteLine(routing.Intent);
         return 0;

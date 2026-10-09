@@ -16,7 +16,7 @@ concept.
 | Item | Where | State |
 |---|---|---|
 | Python reference (Phase 0) | `src/claudeos/`, `tests/` | 23 tests. The executable spec the C# core was ported from; plans have byte-identical digests in both |
-| **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 393 xUnit tests (all pass on Linux; the first 248 also passed on Windows in CI, the rest are waiting on Actions billing). Zero dependencies; Native AOT verified in CI |
+| **C# core** | `windows/src/ClaudeOS.Core` | Actions, policy, consent, overlay and undo, intent grammar and router, layout engine, charts, mods, presence, planner, token ledger. 412 xUnit tests (all pass on Linux; the first 248 also passed on Windows in CI, the rest are waiting on Actions billing). Zero dependencies; Native AOT verified in CI |
 | Claude adapter | `windows/src/ClaudeOS.Claude` | The only reference to the official Anthropic SDK, behind `IModelClient`. Tested against a fake API; **never run against the live API** (no key in CI) |
 | CLI | `windows/src/ClaudeOS.Cli` | `do`, `apply`, `undo`, `log`, `chart`, `route`, `theme`, `demo-data`. Runs the whole core on any OS |
 | **Windows shell** | `windows/src/ClaudeOS.Shell` | WinUI 3 on Windows App SDK 2.5.1: Intent Bar, presence orb, subject-only chart windows, approval window with hold-to-approve, widget windows, key entry, tray, device check, a self-test. Compiles for x64 and ARM64 in CI and packages as a signed MSIX. Compiles, installs and passes its own self-test on a Windows desktop in CI; **not yet run on your Surface** |
@@ -93,8 +93,10 @@ In order:
    fallbacks are in [stack-decision.md](docs/stack-decision.md#what-would-change-this-decision).
 2. **Live Claude pass.** Run the walk-through with a real key; tune the system prompts
    in `ClaudeOS.Core/Planning` (they are plain constants with tests around them).
-3. **On-device routing.** Add the Windows ML classifier behind `IIntentClassifier`;
-   the grammar already handles the common phrases.
+3. **On-device routing, the NPU part.** A CPU classifier already sits between the grammar and the
+   cloud (`LocalIntentClassifier`, measured on unseen phrases: see [testing](docs/testing.md)).
+   What is left is a learned model on the NPU behind the same `IIntentClassifier`, if M0 shows
+   it is worth it. Real phrases that route wrongly belong in `IntentTraining`.
 4. **Habits, further.** The loop works end to end (three drags, an offer in the bar, "yes",
    a card, a layout-rule mod, the next chart lands there). What it has seen and which offers it
    has made are saved in `habits.json` in the state folder, so a restart keeps a habit in

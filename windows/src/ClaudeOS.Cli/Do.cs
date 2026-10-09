@@ -28,7 +28,7 @@ internal static class Do
         }
 
         var root = opts.Get("root") ?? ".";
-        var routing = await new IntentRouter().RouteAsync(text);
+        var routing = await new IntentRouter(new LocalIntentClassifier()).RouteAsync(text);
         Console.Error.WriteLine($"  routed locally in {routing.Elapsed.TotalMilliseconds:0.0} ms: {routing.Intent.GetType().Name}");
 
         switch (routing.Intent)

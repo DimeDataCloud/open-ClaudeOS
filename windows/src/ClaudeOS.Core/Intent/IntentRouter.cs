@@ -11,9 +11,9 @@ public enum IntentLabel { Open, Find, Make, Change, Window, Other }
 public sealed record ClassifierResult(IntentLabel Label, double Confidence);
 
 /// <summary>
-/// A small on-device model (an ONNX classifier run on the NPU through Windows ML) that decides
-/// between "open", "make" and "change" for phrasings the grammar does not know. It routes;
-/// it never approves anything.
+/// A small on-device model that decides between "open", "find", "make" and "change" for phrasings
+/// the grammar does not know. <see cref="LocalIntentClassifier"/> does this on the CPU today; a
+/// Windows ML model on the NPU can replace it behind this interface. It routes; it never approves anything.
 /// </summary>
 public interface IIntentClassifier
 {
@@ -59,9 +59,9 @@ public sealed class IntentRouter(IIntentClassifier? classifier = null, ICloudInt
 
     private static UserIntent? FromLabel(IntentLabel label, string text) => label switch
     {
-        IntentLabel.Open => new OpenIntent(text, text.Trim()),
-        IntentLabel.Find => new FindIntent(text, text.Trim()),
-        IntentLabel.Make => new MakeIntent(text, MakeKind.Other, text.Trim()),
+        IntentLabel.Open => IntentGrammar.QueryOf(text) is { Length: > 0 } open ? new OpenIntent(text, open) : null,
+        IntentLabel.Find => IntentGrammar.QueryOf(text) is { Length: > 0 } find ? new FindIntent(text, find) : null,
+        IntentLabel.Make => new MakeIntent(text, IntentGrammar.MakeKindOf(text), text.Trim()),
         IntentLabel.Change => new ChangeIntent(text, text.Trim()),
         _ => null,
     };
