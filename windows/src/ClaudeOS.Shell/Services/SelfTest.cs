@@ -51,6 +51,8 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
 
         Note($"open-ClaudeOS self-test, {DateTime.Now:s}, {System.Runtime.InteropServices.RuntimeInformation.OSDescription}, {System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}");
         await WaitForFileIndex();
+        await Task.Delay(1500);
+        Note($"memory in use when idle: {Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024} MB (target under 150 MB)");
 
         await Step("intent bar", BarAsync);
         await Step("chart window", ChartWindowAsync);
@@ -75,7 +77,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Task.Delay(500);
         var probe = bar.Probe("q3");
         await Task.Delay(200);
-        Expect(probe.Visible, "the bar is visible after being summoned");
+        Expect(probe.Visible, $"the bar is visible after being summoned (presence: {services.Bar.Presence.Frame.State}, summon took {probe.SummonMs:0} ms)");
         Expect(probe.Width > 300 && probe.Height > 40, $"the bar has a sensible size ({probe.Width}x{probe.Height})");
         bar.Dismiss();
         return $"visible, {probe.Width}x{probe.Height}px, summon {probe.SummonMs:0} ms, input focused: {probe.Focused}. Typing \"q3\" gave {probe.Results} result(s)" +
@@ -147,6 +149,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         await Task.Delay(500);
         Expect(window.RowCount == 2, $"the card shows both actions ({window.RowCount})");
 
+        var drew = Controls.TreeText.Of(window.Content, 8); // read it now: the window closes when approved
         window.PressForTest();
         await Task.Delay(150);
         window.ReleaseForTest(); // let go early
@@ -156,7 +159,7 @@ internal sealed class SelfTest(App app, AppServices services, IntentBarWindow ba
         window.PressForTest();
         await Task.Delay(1000); // hold
         Expect(window.IsAnswered && await answer, "holding the button approves");
-        return $"2 rows, hold-to-approve required, early release ignored, full hold approved. Card says: {Controls.TreeText.Of(window.Content, 8)}";
+        return $"2 rows, hold-to-approve required, early release ignored, full hold approved. Card says: {drew}";
     }
 
     private async Task<string> KeyWindowAsync()
