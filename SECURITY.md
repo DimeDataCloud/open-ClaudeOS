@@ -7,10 +7,9 @@ what is in scope.
 
 ## Reporting a vulnerability
 
-Please report privately through GitHub's
-["Report a vulnerability"](../../security/advisories/new) on this repository,
-not in a public issue. Include what you did, what you expected, and what
-happened. You will get an acknowledgement; there is no bounty.
+Please report privately: on this repository's **Security** tab choose **Report a
+vulnerability**, not a public issue. Include what you did, what you expected, and
+what happened. You will get an acknowledgement; there is no bounty.
 
 ## What counts
 
