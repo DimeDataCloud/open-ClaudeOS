@@ -88,9 +88,31 @@ covered".
 ## The Windows shell in CI
 
 Every push compiles the shell for x64 and ARM64 on a Windows runner. That proves
-the XAML and C# are consistent and the packages restore; it does not prove the
-app behaves. The `package` workflow additionally produces an installable
-`.msix` for ARM64 (see the README for installing it).
+the XAML and C# are consistent and the packages restore. The *Package (Windows)*
+workflow then goes further: it builds the signed MSIX, **installs it on a
+Windows desktop session, launches it, and has the app test itself.**
+
+The self-test is started by a marker file in the app's own private folder
+(`LocalState\selftest.flag`), runs inside the real process, and writes
+`selftest.txt`, which the workflow prints into the run summary. It uses a
+scripted stand-in for Claude, a temporary workspace and a temporary state
+folder; it never touches your files or key. It checks that:
+
+- the Intent Bar appears, is the right size, and search results show as you type;
+- a chart opens in a frameless window, the SVG loads, and it lays out;
+- "chart spend by month" through the whole agent path produces a chart window and
+  saves it as a new file;
+- "make a clock widget" shows an approval card listing what it can read, and after
+  approval a widget window shows the live time;
+- **a plan with an email planted by an invoice** reaches the real approval window
+  with the planted recipient on the card, flagged as untrusted and as leaving the
+  PC; declining writes nothing and sends nothing;
+- hold-to-approve: letting go early does not approve, a full hold does;
+- the key window and the **Check this device** report render and produce numbers.
+
+What this does not prove: how it looks (it reads text back from the UI, not
+pixels), how it feels (a CI VM has no GPU, so frame rates there say nothing),
+ARM64 behaviour (the runner is x64), or touch. Those need the device.
 
 ## On the device: the manual script
 
