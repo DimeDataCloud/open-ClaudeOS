@@ -55,7 +55,7 @@ internal sealed partial class WidgetWindow : Window
         escape.Invoked += (_, e) => { e.Handled = true; Close(); };
         Root.KeyboardAccelerators.Add(escape);
 
-        _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+        _timer = DispatcherQueue.CreateTimer();
         _timer.Interval = TimeSpan.FromSeconds(1);
         _timer.Tick += (_, _) => Refresh();
         Closed += (_, _) => _timer.Stop();
