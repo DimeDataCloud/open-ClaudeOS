@@ -21,7 +21,7 @@ namespace ClaudeOS.Shell.Views;
 /// has no title bar, no border and no taskbar button; Windows supplies the rounded corners and
 /// the acrylic.
 /// </summary>
-public sealed partial class IntentBarWindow : Window
+internal sealed partial class IntentBarWindow : Window
 {
     private const double WidthDips = 720;
     private const double RowDips = 48;

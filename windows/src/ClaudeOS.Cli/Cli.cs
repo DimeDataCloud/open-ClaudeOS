@@ -51,6 +51,7 @@ public static class Cli
                 "chart" => Chart(opts),
                 "route" => await RouteAsync(opts),
                 "theme" => Theme(opts),
+                "demo-data" => DemoData.Run(opts),
                 _ => Fail($"unknown command '{opts.Command}'. Try: claudeos help"),
             };
         }
