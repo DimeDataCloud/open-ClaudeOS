@@ -21,6 +21,8 @@ namespace ClaudeOS.Shell.Views;
 /// has no title bar, no border and no taskbar button; Windows supplies the rounded corners and
 /// the acrylic.
 /// </summary>
+internal sealed record BarProbe(bool Visible, int Width, int Height, int Results, string First, bool Focused, double SummonMs, string Texts);
+
 internal sealed partial class IntentBarWindow : Window
 {
     private const double WidthDips = 720;
@@ -92,6 +94,22 @@ internal sealed partial class IntentBarWindow : Window
         Native.SetForegroundWindow(_hwnd);
         Activate();
         Input.Focus(FocusState.Programmatic);
+    }
+
+    /// <summary>What the bar looks like right now, after typing <paramref name="text"/>. For the self-test.</summary>
+    public BarProbe Probe(string text)
+    {
+        Input.Text = text;
+        var focused = FocusManager.GetFocusedElement(Content.XamlRoot) == Input;
+        return new BarProbe(
+            AppWindow.IsVisible,
+            AppWindow.Size.Width,
+            AppWindow.Size.Height,
+            _results.Count,
+            _results.Count > 0 ? _results[0].Title : "",
+            focused,
+            LastSummonMilliseconds,
+            Controls.TreeText.Of(Root));
     }
 
     public void Dismiss()

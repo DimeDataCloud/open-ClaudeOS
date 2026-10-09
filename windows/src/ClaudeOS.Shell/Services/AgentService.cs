@@ -29,9 +29,15 @@ internal sealed class AgentService
     private readonly IReadOnlyList<IDataProvider> _providers;
     private readonly ModStore _mods;
     private readonly Policy _policy = new();
+    private readonly Func<IModelClient>? _modelOverride;
+    private readonly string _workspaceRoot;
 
-    public AgentService(PresenceMachine presence, StateDir state, TokenLedger ledger, FileIndex files, IShellUi ui, Func<Appearance> appearance)
+    /// <param name="modelOverride">Replaces the Claude client, and the need for a key. Only the self-test passes it.</param>
+    /// <param name="workspaceRoot">Where Claude may look and save. Defaults to the person's Documents folder.</param>
+    public AgentService(PresenceMachine presence, StateDir state, TokenLedger ledger, FileIndex files, IShellUi ui, Func<Appearance> appearance, Func<IModelClient>? modelOverride = null, string? workspaceRoot = null)
     {
+        _modelOverride = modelOverride;
+        _workspaceRoot = workspaceRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         _presence = presence;
         _state = state;
         _ledger = ledger;
@@ -43,19 +49,19 @@ internal sealed class AgentService
         _mods = new ModStore(modsRoot, _broker);
     }
 
-    /// <summary>Where Claude may look and where new things are saved: the person's Documents folder.</summary>
-    public static string WorkspaceRoot => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    /// <summary>Where Claude may look and where new things are saved.</summary>
+    private string WorkspaceRoot => _workspaceRoot;
 
     /// <summary>Hands Claude the request and returns the line the bar shows when it is done.</summary>
     public async Task<string> RunAsync(UserIntent intent, string text, CancellationToken ct = default)
     {
-        if (!await _ui.EnsureKeyAsync())
+        if (_modelOverride is null && !await _ui.EnsureKeyAsync())
         {
             Say(new Failed("Claude is not connected"));
             return "Claude is not connected. Add your key from the tray menu to use this.";
         }
 
-        var client = AnthropicModelClient.WithKey(KeyVault.Get());
+        IModelClient client = _modelOverride?.Invoke() ?? AnthropicModelClient.WithKey(KeyVault.Get());
         var settings = new ModelSettings(Effort: Effort.Medium);
         var maker = new ArtifactMaker(client, settings, _ledger, Emit);
         Say(new Agent(new AgentEvent("request")));
@@ -115,7 +121,7 @@ internal sealed class AgentService
         async Task Edit(IChartWindow window)
         {
             var instruction = await window.AskAsync("Change this chart", "Make the bars blue, or group it by quarter");
-            if (instruction is null || !await _ui.EnsureKeyAsync())
+            if (instruction is null || (_modelOverride is null && !await _ui.EnsureKeyAsync()))
             {
                 return;
             }

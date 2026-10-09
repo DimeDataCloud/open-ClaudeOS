@@ -12,6 +12,18 @@ internal sealed class ShellUi(DispatcherQueue dispatcher, Placer placer, Presenc
     // Windows the user has not closed. Holding them here keeps them alive.
     private readonly List<object> _open = [];
 
+    /// <summary>The windows that are open right now, in the order they opened.</summary>
+    public IReadOnlyList<object> Open => _open;
+
+    /// <summary>Close every window this opened (the self-test cleans up with it).</summary>
+    public void CloseAll()
+    {
+        foreach (var window in _open.OfType<Microsoft.UI.Xaml.Window>().ToList())
+        {
+            window.Close();
+        }
+    }
+
     public void Post(Action action)
     {
         if (dispatcher.HasThreadAccess)
@@ -27,7 +39,12 @@ internal sealed class ShellUi(DispatcherQueue dispatcher, Placer placer, Presenc
     public async Task<bool> EnsureKeyAsync() =>
         KeyVault.Has || await OnUi(() => new KeyWindow().AskAsync());
 
-    public Task<bool> ApproveAsync(ApprovalModel model) => OnUi(() => new ApprovalWindow(model).AskAsync());
+    public Task<bool> ApproveAsync(ApprovalModel model) => OnUi(() =>
+    {
+        var window = new ApprovalWindow(model);
+        Keep(window, window);
+        return window.AskAsync();
+    });
 
     public Task<IChartWindow> ShowChartAsync(string altText, string svg, int widthDips, int heightDips, Func<IChartWindow, Task> edit) => OnUi(async () =>
     {

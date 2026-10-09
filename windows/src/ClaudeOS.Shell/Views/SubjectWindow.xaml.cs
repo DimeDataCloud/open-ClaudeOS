@@ -132,9 +132,15 @@ internal sealed partial class SubjectWindow : Window, IChartWindow
         }
 
         stream.Seek(0);
-        await source.SetSourceAsync(stream);
+        var status = await source.SetSourceAsync(stream);
+        LoadStatus = status.ToString();
         Picture.Source = source;
     }
+
+    /// <summary>How the last SVG load ended ("Success" when the picture is on screen).</summary>
+    public string LoadStatus { get; private set; } = "NotLoaded";
+
+    public double PictureWidth => Picture.ActualWidth;
 
     private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {

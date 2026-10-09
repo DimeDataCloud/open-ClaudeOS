@@ -112,3 +112,66 @@ jobs:
             "`n``````n$((Get-Content aot-errors.log | ForEach-Object { ($_ -replace '^D:\\a\\[^\\]+\\[^\\]+\\', '') -replace '\s*\[D:\\a[^\]]*\]\s*$', '' } | Sort-Object -Unique | Select-Object -First 15) -join "`n")`n``````" >> $env:GITHUB_STEP_SUMMARY
           }
           exit $LASTEXITCODE
+
+  smoke:
+    name: Run it (x64 desktop)
+    needs: msix
+    runs-on: windows-latest
+    # The first time the shell actually runs is here, on a real Windows desktop session. It installs
+    # the signed package, asks the app to test itself (docs/testing.md) and prints what it reports.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: open-ClaudeOS-x64
+          path: pkg
+
+      - name: Install the package
+        id: install
+        shell: pwsh
+        run: |
+          $cer = Get-ChildItem pkg -Recurse -Filter *.cer | Select-Object -First 1
+          $msix = Get-ChildItem pkg -Recurse -Filter *.msix | Select-Object -First 1
+          Import-Certificate -FilePath $cer.FullName -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
+          Add-AppxPackage -Path $msix.FullName
+          $package = Get-AppxPackage -Name OpenClaudeOS.Dev
+          if (-not $package) { throw "package did not install" }
+          Write-Host "Installed $($package.PackageFullName)"
+          "pfn=$($package.PackageFamilyName)" >> $env:GITHUB_OUTPUT
+
+      - name: Self-test
+        shell: pwsh
+        env:
+          PFN: ${{ steps.install.outputs.pfn }}
+        run: |
+          $state = Join-Path $env:LOCALAPPDATA "Packages\$env:PFN\LocalState"
+          New-Item -ItemType Directory -Force -Path $state | Out-Null
+          # Something for the file search to find.
+          $docs = [Environment]::GetFolderPath("MyDocuments")
+          New-Item -ItemType Directory -Force -Path $docs | Out-Null
+          "date,amount`n2026-01-01,1" | Set-Content (Join-Path $docs "Q3 Budget.csv")
+          Remove-Item (Join-Path $state "selftest.txt") -ErrorAction SilentlyContinue
+          New-Item (Join-Path $state "selftest.flag") -ItemType File | Out-Null
+
+          Start-Process "shell:AppsFolder\$env:PFN!App"
+          $report = Join-Path $state "selftest.txt"
+          $deadline = (Get-Date).AddSeconds(180)
+          while (-not (Test-Path $report) -and (Get-Date) -lt $deadline) {
+            if (-not (Get-Process ClaudeOS -ErrorAction SilentlyContinue) -and ((Get-Date) -gt $deadline.AddSeconds(-150))) { break }
+            Start-Sleep -Seconds 2
+          }
+
+          if (Test-Path $report) {
+            $text = Get-Content $report -Raw
+            Write-Host $text
+            "### Shell self-test (x64, Windows desktop)`n``````n$text``````" >> $env:GITHUB_STEP_SUMMARY
+            if ($text -notmatch "RESULT: all checks passed") { exit 1 }
+          } else {
+            Write-Host "::error::The app did not write a self-test report."
+            Write-Host "Process running: $([bool](Get-Process ClaudeOS -ErrorAction SilentlyContinue))"
+            Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Level = 2; StartTime = (Get-Date).AddMinutes(-10) } -MaxEvents 6 -ErrorAction SilentlyContinue |
+              ForEach-Object { "$($_.TimeCreated) $($_.ProviderName): $(($_.Message -replace '\s+', ' ').Substring(0, [Math]::Min(700, $_.Message.Length)))" }
+            Get-ChildItem (Join-Path $env:LOCALAPPDATA "Packages\$env:PFN") -Recurse -Filter audit.jsonl -ErrorAction SilentlyContinue |
+              ForEach-Object { Get-Content $_.FullName -Tail 5 }
+            exit 1
+          }

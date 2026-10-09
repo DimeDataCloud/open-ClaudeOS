@@ -45,6 +45,8 @@ internal sealed partial class DiagnosticsWindow : Window
         Orb.Apply(new PresenceFrame(PresenceState.Working, "Measuring", Intensity: 0.8), reducedMotion);
     }
 
+    public string ReportText => Report.Text;
+
     public async Task RunAsync()
     {
         var monitor = WindowCatalog.Capture(_hwnd).FocusMonitor;

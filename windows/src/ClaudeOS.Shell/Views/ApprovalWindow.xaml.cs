@@ -249,6 +249,16 @@ internal sealed partial class ApprovalWindow : Window
         };
     }
 
+    /// <summary>How many rows the card shows (the self-test checks this).</summary>
+    public int RowCount => _model.Rows.Length;
+
+    public bool IsAnswered => _answered;
+
+    /// <summary>Press and release exactly as a person would; used by the self-test.</summary>
+    public void PressForTest() => BeginApprove();
+
+    public void ReleaseForTest() => EndApprove();
+
     private void BeginApprove()
     {
         if (_model.Refused || _answered)
