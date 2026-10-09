@@ -40,6 +40,10 @@ public sealed record Policy
         "id_rsa*", "id_ed25519*", "id_ecdsa*", "NTUSER.DAT*",
     ];
 
+    /// <summary>Characters Windows forbids in a name (and a stream separator): refused everywhere, so on a
+    /// system where a backslash is an ordinary character it still cannot smuggle in a share path.</summary>
+    private static readonly System.Buffers.SearchValues<char> InvalidNameChars = System.Buffers.SearchValues.Create(":\\<>\"|?*");
+
     private static readonly HashSet<string> ReservedDeviceNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
@@ -56,6 +60,14 @@ public sealed record Policy
 
     public string CheckPath(Overlay overlay, string path)
     {
+        // Control characters (a NUL above all) mean nothing good in a path; the file system layer would
+        // throw an unrelated exception type, so a model-supplied path could crash the loop instead of
+        // being refused. Found by the path fuzz test.
+        if (path.Any(char.IsControl))
+        {
+            throw new PolicyDeniedException("a path with control characters is not a portable file name");
+        }
+
         string rel;
         try
         {
@@ -64,6 +76,10 @@ public sealed record Policy
         catch (PathEscapeException e)
         {
             throw new PolicyDeniedException(e.Message);
+        }
+        catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            throw new PolicyDeniedException("that is not a portable file name");
         }
 
         if (rel == ".")
@@ -81,7 +97,7 @@ public sealed record Policy
             // Names that mean something else on Windows: alternate data streams, device names,
             // and trailing dots or spaces that Windows silently strips. Refused everywhere so a
             // plan means the same thing on every platform.
-            if (part.Contains(':') || part.EndsWith('.') || part.EndsWith(' ') || ReservedDeviceNames.Contains(part.Split('.')[0]) || part.Length > 255)
+            if (part.AsSpan().IndexOfAny(InvalidNameChars) >= 0 || part.EndsWith('.') || part.EndsWith(' ') || ReservedDeviceNames.Contains(part.Split('.')[0]) || part.Length > 255)
             {
                 throw new PolicyDeniedException($"{rel} is not a portable file name");
             }
