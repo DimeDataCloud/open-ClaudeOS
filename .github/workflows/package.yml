@@ -8,8 +8,19 @@ name: Package (Windows)
 # once. Otherwise a throwaway certificate is made for this run and its .cer is published next to the
 # package. The private key never leaves the runner and is never in the repository.
 
+# The expensive one (Windows runners bill at twice the rate). It runs when the app or the packaging
+# changes, on main, and on demand: Actions > Package (Windows) > Run workflow, choosing a branch.
 on:
   push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "windows/src/ClaudeOS.Shell/**"
+      - "windows/src/ClaudeOS.Core/**"
+      - "windows/src/ClaudeOS.Claude/**"
+      - "design/dist/**"
+      - "tools/**"
+      - ".github/workflows/package.yml"
   workflow_dispatch:
 
 # contents: write lets the build attach its packages to the rolling "ci-latest" pre-release.
@@ -102,7 +113,7 @@ jobs:
       # GitHub's artifact store is a per-account quota and can be full (this repo's was). Release assets
       # are not part of it, so the installable packages are also attached to one rolling pre-release.
       - name: Attach the package to the rolling pre-release
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -180,13 +191,15 @@ jobs:
           if (Test-Path $shots) {
             $zip = Join-Path $env:RUNNER_TEMP "selftest-shots.zip"
             Compress-Archive -Path "$shots\*" -DestinationPath $zip -Force
-            if ('${{ github.event_name }}' -eq 'push') { gh release upload ci-latest $zip --clobber }
+            if ('${{ github.event_name }}' -ne 'pull_request' -or '${{ github.event.pull_request.head.repo.full_name }}' -eq '${{ github.repository }}') { gh release upload ci-latest $zip --clobber }
             Get-ChildItem $shots | ForEach-Object { Write-Host "$($_.Name) $($_.Length) bytes" }
           } else { Write-Host "no pictures were taken" }
           $global:LASTEXITCODE = 0
 
   aot-probe:
     name: Native AOT probe
+    # Only on demand: the answer is known (see docs/stack-decision.md) and the job costs minutes.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     # A measurement, not a gate: Native AOT for WinUI is on the milestone-0 checklist. Expect it to fail
     # while the official Anthropic SDK needs reflection-based JSON (see docs/stack-decision.md); the

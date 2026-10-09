@@ -99,8 +99,8 @@ dotnet run --project src/ClaudeOS.Cli -- do "Summarize September's invoices into
 
 ### 3. The Windows app (Windows 11, ARM64 or x64)
 
-Every push builds a test-signed MSIX and attaches it to one rolling pre-release.
-Open the repository's **Releases**, choose **Latest CI build**, and download the
+The *Package (Windows)* workflow builds a test-signed MSIX and attaches it to one rolling pre-release.
+Open the repository's **Releases**, choose **Latest CI build** (refreshed by the *Package (Windows)* workflow; run it from the Actions tab for any branch), and download the
 package for your machine (`..._ARM64.msix` for a Surface with Snapdragon,
 `..._x64.msix` otherwise) and the `.cer` with the same suffix. Trust the `.cer`
 once (Local Machine → Trusted People), then open the `.msix`. Press

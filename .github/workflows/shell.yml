@@ -6,7 +6,12 @@ name: Shell (Windows)
 
 on:
   push:
+    branches: [main]
   pull_request:
+    paths:
+      - "windows/**"
+      - "design/dist/**"
+      - ".github/workflows/shell.yml"
   workflow_dispatch:
 
 concurrency:

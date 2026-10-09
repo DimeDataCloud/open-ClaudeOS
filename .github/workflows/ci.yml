@@ -1,7 +1,10 @@
 name: CI
 
+# Runs on pull requests and on main, not on every push to a branch that already has a pull request:
+# that used to run everything twice per commit and used up the account's Actions minutes.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
