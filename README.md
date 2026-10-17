@@ -150,11 +150,11 @@ This is a pre-release. What has been verified, and by what:
 
 | | State |
 |---|---|
-| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 434 tests (about 91% of the hand-written core lines are exercised) (248 of them also green on Windows in CI before its allowance ran out; see the handoff); 23 in the Python reference |
+| Core logic (policy, consent, undo, routing, layout, charts, mods, presence, planner) | **Tested**: 434 tests (about 91% of the hand-written core lines are exercised) (most of them also green on Windows in CI before its allowance ran out; see the handoff); plus a Python reference suite |
 | Anthropic SDK adapter | **Tested against a fake API** (tool use, refusals, rate limits, network errors). Not yet run against the live API in CI, which has no key by design |
 | Design system and prototype | **Built and checked**: tokens generate three outputs and CI fails on drift; palette checked for colour-vision separation; prototype screenshots are generated from the real core |
 | Windows shell | **Compiles for x64 and ARM64 in CI, packages as a signed MSIX, and in CI is installed on a Windows desktop and tests itself** (bar, chart, widget, approval card with a planted email, hold-to-approve). It has **not yet been run on a Surface**; expect polish bugs in how it looks and feels. That is milestone M0 |
-| On-device routing | **Built on the CPU and measured on phrases it never saw**: right 84% of the time (58 of 69), and when it answers (at least 80% sure, about half the time) it was right every time (35 of 35); everything else goes on to the cloud. Chat and file chores are never taken for commands. Swapping in an NPU model is the part that is designed, not built |
+| On-device routing | **Built on the CPU and measured on phrases it never saw**: right on most of them, and when it answers (at least 80% sure, about half the time) it was right every time; everything else goes on to the cloud. Chat and file chores are never taken for commands. Swapping in an NPU model is the part that is designed, not built |
 | Agent Launcher | Designed; M0 measures it. The device check says plainly what is not wired up yet |
 | Native AOT | **Core and CLI: verified** (CI publishes and runs the native binary). **Shell: no**: the official Anthropic SDK needs reflection-based JSON, so the shell runs on the regular .NET runtime. [Details](docs/stack-decision.md#native-aot-measured-and-the-answer-is-not-with-this-sdk) |
 | Scripted mods | **Built and tested on Linux**: formulas (no loops, no calls out) with a step budget, shown in full on the approval card; the native binary runs them. The shell draws them like any widget but that path has not run on Windows yet |
